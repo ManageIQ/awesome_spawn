@@ -4,13 +4,20 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'awesome_spawn/version'
 
 Gem::Specification.new do |spec|
+  authors = {
+    "Jason Frey"     => "jfrey@redhat.com",
+    "Brandon Dunne"  => "bdunne@redhat.com",
+    "Joe Rafaniello" => "jrafanie@redhat.com",
+    "Mo Morsi"       => "mmorsi@redhat.com"
+  }
+
   spec.name          = "awesome_spawn"
   spec.version       = AwesomeSpawn::VERSION
-  spec.authors       = ["Jason Frey"]
-  spec.email         = ["fryguy9@gmail.com"]
-  spec.description   = %q{TODO: Write a gem description}
-  spec.summary       = %q{TODO: Write a gem summary}
-  spec.homepage      = ""
+  spec.authors       = authors.keys
+  spec.email         = authors.values
+  spec.description   = %q{AwesomeSpawn is a module that provides some useful features over Ruby's Kernel.spawn.}
+  spec.summary       = spec.description
+  spec.homepage      = "https://github.com/ManageIQ/awesome_spawn"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
