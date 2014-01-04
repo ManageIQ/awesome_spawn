@@ -80,6 +80,7 @@ describe AwesomeSpawn do
 
     context "with real execution" do
       before do
+        # Re-enable actual spawning just for these specs.
         Kernel.stub(:spawn).and_call_original
       end
 
