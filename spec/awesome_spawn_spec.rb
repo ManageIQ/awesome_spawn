@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'pathname' # For Pathname specific specs
 
 describe AwesomeSpawn do
   subject { described_class }
@@ -18,41 +19,9 @@ describe AwesomeSpawn do
   end
 
   shared_examples_for "run" do
-    context "paramater and command handling" do
+    context "parameters" do
       before do
         subject.stub(:exitstatus => 0)
-      end
-
-      it "sanitizes crazy params" do
-        subject.should_receive(:launch).once.with("true --user bob --pass P@\\$sw0\\^\\&\\ \\|\\<\\>/-\\+\\*d\\% --db --desc=Some\\ Description pkg1 some\\ pkg --pool 123 --pool 456", {})
-        subject.send(run_method, "true", :params => modified_params)
-      end
-
-      it "sanitizes fixnum array params" do
-        subject.should_receive(:launch).once.with("true 1", {})
-        subject.send(run_method, "true", :params => {nil => [1]})
-      end
-
-      it "sanitizes Pathname option value" do
-        require 'pathname'
-        subject.should_receive(:launch).once.with("true /usr/bin/ruby", {})
-        subject.send(run_method, "true", :params => {nil => [Pathname.new("/usr/bin/ruby")]})
-      end
-
-      it "sanitizes Pathname option" do
-        require 'pathname'
-        subject.should_receive(:launch).once.with("true /usr/bin/ruby", {})
-        subject.send(run_method, "true", :params => {Pathname.new("/usr/bin/ruby") => nil})
-      end
-
-      it "as empty hash" do
-        subject.should_receive(:launch).once.with("true", {})
-        subject.send(run_method, "true", :params => {})
-      end
-
-      it "as nil" do
-        subject.should_receive(:launch).once.with("true", {})
-        subject.send(run_method, "true", :params => nil)
       end
 
       it "won't modify caller params" do
@@ -60,16 +29,6 @@ describe AwesomeSpawn do
         subject.stub(:launch)
         subject.send(run_method, "true", :params => params)
         expect(orig_params).to eq(params)
-      end
-
-      it "Pathname command" do
-        subject.should_receive(:launch).once.with("/usr/bin/ruby", {})
-        subject.send(run_method, Pathname.new("/usr/bin/ruby"), {})
-      end
-
-      it "Pathname command with params" do
-        subject.should_receive(:launch).once.with("/usr/bin/ruby -v", {})
-        subject.send(run_method, Pathname.new("/usr/bin/ruby"), :params => {"-v" => nil})
       end
 
       it "supports spawn's chdir option" do
@@ -95,16 +54,16 @@ describe AwesomeSpawn do
           # raise_error with do/end block notation is broken in rspec-expectations 2.14.x
           # and has been fixed in master but not yet released.
           # See: https://github.com/rspec/rspec-expectations/commit/b0df827f4c12870aa4df2f20a817a8b01721a6af
-          expect {subject.send(run_method, "false")}.to raise_error {|e| error = e }
+          expect { subject.send(run_method, "false") }.to raise_error {|e| error = e }
           expect(error).to be_kind_of AwesomeSpawn::CommandResultError
           expect(error.result).to be_kind_of AwesomeSpawn::CommandResult
         else
-          expect {subject.send(run_method, "false")}.to_not raise_error
+          expect { subject.send(run_method, "false") }.to_not raise_error
         end
       end
 
       it "command bad" do
-        expect {subject.send(run_method, "XXXXX --user=bob")}.to raise_error(Errno::ENOENT, "No such file or directory - XXXXX")
+        expect { subject.send(run_method, "XXXXX --user=bob") }.to raise_error(Errno::ENOENT, "No such file or directory - XXXXX")
       end
 
       context "#exit_status" do
@@ -148,6 +107,53 @@ describe AwesomeSpawn do
   context ".run!" do
     include_examples "run" do
       let(:run_method) {"run!"}
+    end
+  end
+
+  context ".build_command_line" do
+    it "sanitizes crazy params" do
+      cl = subject.build_command_line("true", modified_params)
+      expect(cl).to eq "true --user bob --pass P@\\$sw0\\^\\&\\ \\|\\<\\>/-\\+\\*d\\% --db --desc=Some\\ Description pkg1 some\\ pkg --pool 123 --pool 456"
+    end
+
+    it "sanitizes Fixnum array param value" do
+      cl = subject.build_command_line("true", nil => [1])
+      expect(cl).to eq "true 1"
+    end
+
+    it "sanitizes Pathname param value" do
+      cl = subject.build_command_line("true", nil => [Pathname.new("/usr/bin/ruby")])
+      expect(cl).to eq "true /usr/bin/ruby"
+    end
+
+    it "sanitizes Pathname param key" do
+      cl = subject.build_command_line("true", Pathname.new("/usr/bin/ruby") => nil)
+      expect(cl).to eq "true /usr/bin/ruby"
+    end
+
+    it "with params as empty Hash" do
+      cl = subject.build_command_line("true", {})
+      expect(cl).to eq "true"
+    end
+
+    it "with params as nil" do
+      cl = subject.build_command_line("true", nil)
+      expect(cl).to eq "true"
+    end
+
+    it "without params" do
+      cl = subject.build_command_line("true")
+      expect(cl).to eq "true"
+    end
+
+    it "with Pathname command" do
+      cl = subject.build_command_line(Pathname.new("/usr/bin/ruby"))
+      expect(cl).to eq "/usr/bin/ruby"
+    end
+
+    it "with Pathname command and params" do
+      cl = subject.build_command_line(Pathname.new("/usr/bin/ruby"), "-v" => nil)
+      expect(cl).to eq "/usr/bin/ruby -v"
     end
   end
 end

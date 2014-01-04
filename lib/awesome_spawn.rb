@@ -38,17 +38,9 @@ module AwesomeSpawn
   #
   # @param [String] command The command to run
   # @param [Hash] options The options for running the command
-  #
-  # @option options [Hash,Array] :params The command line parameters. They can
-  #   be passed as a Hash or associative Array. The values are sanitized to
-  #   prevent command line injection. Alternate key `:parameters`
-  #
-  #   - `{:params => {"--key" => "value"}}`         generates `--key value`
-  #   - `{:params => {"--key=" => "value"}}`        generates `--key=value`
-  #   - `{:params => {"--key" => nil}}`             generates `--key`
-  #   - `{:params => {"-f" => ["file1", "file2"]}}` generates `-f file1 file2`
-  #   - `{:params => {nil => ["file1", "file2"]}}`  generates `file1 file2`
-  #
+  # @option options [Hash,Array] :params The command line parameters. See
+  #   {#build_command_line} for how to specify params. Alternate key
+  #   `:parameters`.
   # @option options [String] :chdir see the `:chdir` parameter for Kernel.spawn
   #
   # @raise [NoSuchFileError] if the `command` is not found
@@ -63,7 +55,7 @@ module AwesomeSpawn
     output        = ""
     error         = ""
     status        = nil
-    command_line  = build_command(command, params)
+    command_line  = build_command_line(command, params)
 
     begin
       output, error = launch(command_line, launch_params)
@@ -102,6 +94,25 @@ module AwesomeSpawn
     command_result
   end
 
+  # Build the full command line.
+  #
+  # @param [String] command The command to run
+  # @param [Hash,Array] params Optional command line parameters. They can
+  #   be passed as a Hash or associative Array. The values are sanitized to
+  #   prevent command line injection.
+  #
+  #   - `{"--key" => "value"}`         generates `--key value`
+  #   - `{"--key=" => "value"}`        generates `--key=value`
+  #   - `{"--key" => nil}`             generates `--key`
+  #   - `{"-f" => ["file1", "file2"]}` generates `-f file1 file2`
+  #   - `{nil => ["file1", "file2"]}`  generates `file1 file2`
+  #
+  # @return [String] The full command line
+  def build_command_line(command, params = nil)
+    return command.to_s if params.nil? || params.empty?
+    "#{command} #{assemble_params(sanitize(params))}"
+  end
+
   private
 
   def sanitize(params)
@@ -121,11 +132,6 @@ module AwesomeSpawn
       pair_joiner = pair.first.to_s.end_with?("=") ? "" : " "
       pair.flatten.compact.join(pair_joiner)
     end.join(" ")
-  end
-
-  def build_command(command, params = nil)
-    return command.to_s if params.nil? || params.empty?
-    "#{command} #{assemble_params(sanitize(params))}"
   end
 
   # IO pipes have a maximum size of 64k before blocking,
