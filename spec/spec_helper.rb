@@ -20,4 +20,7 @@ RSpec.configure do |config|
   end
 end
 
+require 'coveralls'
+Coveralls.wear!
+
 require 'awesome_spawn'
