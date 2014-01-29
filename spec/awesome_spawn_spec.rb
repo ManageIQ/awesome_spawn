@@ -31,10 +31,19 @@ describe AwesomeSpawn do
         expect(orig_params).to eq(params)
       end
 
-      it "supports spawn's chdir option" do
+      it "supports spawn's :chdir option" do
         subject.should_receive(:launch).once.with("true", {:chdir => ".."})
         subject.send(run_method, "true", :chdir => "..")
       end
+
+      it "does not support spawn's :out option" do
+        expect { subject.send(run_method, "true", :out => "/dev/null") }.to raise_error(ArgumentError)
+      end
+
+      it "does not support spawn's :err option" do
+        expect { subject.send(run_method, "true", :err => "/dev/null") }.to raise_error(ArgumentError)
+      end
+
     end
 
     context "with real execution" do
