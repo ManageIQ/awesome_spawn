@@ -37,20 +37,19 @@ module AwesomeSpawn
   #   # => "echo --out \\;\\ rm\\ /some/file"
   #
   # @param [String] command The command to run
-  # @param [Hash] options The options for running the command
+  # @param [Hash] options The options for running the command.  Also accepts any
+  #   option that can be passed to Kernel.spawn, except `:out` and `:err`.
   # @option options [Hash,Array] :params The command line parameters. See
-  #   {#build_command_line} for how to specify params. Alternate key
-  #   `:parameters`.
-  # @option options [String] :chdir see the `:chdir` parameter for Kernel.spawn
+  #   {#build_command_line} for how to specify params.
   #
   # @raise [NoSuchFileError] if the `command` is not found
   # @return [CommandResult] the output stream, error stream, and exit status
   # @see http://ruby-doc.org/core/Kernel.html#method-i-spawn Kernel.spawn
   def run(command, options = {})
-    params = options[:params] || options[:parameters]
-
-    launch_params = {}
-    launch_params[:chdir] = options[:chdir] if options[:chdir]
+    raise ArgumentError, "options cannot contain :out" if options.include?(:out)
+    raise ArgumentError, "options cannot contain :err" if options.include?(:err)
+    options = options.dup
+    params  = options.delete(:params)
 
     output        = ""
     error         = ""
@@ -58,7 +57,7 @@ module AwesomeSpawn
     command_line  = build_command_line(command, params)
 
     begin
-      output, error = launch(command_line, launch_params)
+      output, error = launch(command_line, options)
       status = exitstatus
     ensure
       output ||= ""
