@@ -19,31 +19,29 @@ describe AwesomeSpawn do
   end
 
   shared_examples_for "run" do
-    context "parameters" do
+    context "options" do
       before do
         subject.stub(:exitstatus => 0)
       end
 
-      it "won't modify caller params" do
+      it ":params won't be modified" do
         orig_params = params.dup
         subject.stub(:launch)
         subject.send(run_method, "true", :params => params)
         expect(orig_params).to eq(params)
       end
 
-      it "supports spawn's :chdir option" do
-        subject.should_receive(:launch).once.with("true", {:chdir => ".."})
-        subject.send(run_method, "true", :chdir => "..")
+      it ":in_data cannot be passed with :in" do
+        expect { subject.send(run_method, "true", :in_data => "XXXXX", :in => "/dev/null") } .to raise_error(ArgumentError)
       end
 
-      it "does not support spawn's :out option" do
+      it ":out is not supported" do
         expect { subject.send(run_method, "true", :out => "/dev/null") }.to raise_error(ArgumentError)
       end
 
-      it "does not support spawn's :err option" do
+      it ":err is not supported" do
         expect { subject.send(run_method, "true", :err => "/dev/null") }.to raise_error(ArgumentError)
       end
-
     end
 
     context "with real execution" do
@@ -73,6 +71,20 @@ describe AwesomeSpawn do
 
       it "command bad" do
         expect { subject.send(run_method, "XXXXX --user=bob") }.to raise_error(Errno::ENOENT, "No such file or directory - XXXXX")
+      end
+
+      context "with option" do
+        it ":chdir" do
+          result = subject.send(run_method, "pwd", :chdir => "..")
+          expect(result.exit_status).to  eq(0)
+          expect(result.output.chomp).to eq(File.expand_path("..", Dir.pwd))
+        end
+
+        it ":in_data" do
+          result = subject.send(run_method, "cat", :in_data => "line1\nline2")
+          expect(result.exit_status).to eq(0)
+          expect(result.output).to      eq("line1\nline2")
+        end
       end
 
       context "#exit_status" do
