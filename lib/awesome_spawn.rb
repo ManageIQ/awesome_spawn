@@ -36,11 +36,19 @@ module AwesomeSpawn
   #   result.command_line
   #   # => "echo --out \\;\\ rm\\ /some/file"
   #
+  # @example With data to be passed on stdin
+  #   result = AwesomeSpawn.run('cat', :in_data => "line1\nline2")
+  #   => #<AwesomeSpawn::CommandResult:0x007fff05b0ab10 @exit_status=0>
+  #   result.output
+  #   => "line1\nline2"
+  #
   # @param [String] command The command to run
   # @param [Hash] options The options for running the command.  Also accepts any
   #   option that can be passed to Kernel.spawn, except `:out` and `:err`.
   # @option options [Hash,Array] :params The command line parameters. See
   #   {#build_command_line} for how to specify params.
+  # @option options [String] :in_data Data to be passed on stdin.  If this option
+  #   is specified you cannot specify `:in`.
   #
   # @raise [NoSuchFileError] if the `command` is not found
   # @return [CommandResult] the output stream, error stream, and exit status
@@ -48,8 +56,10 @@ module AwesomeSpawn
   def run(command, options = {})
     raise ArgumentError, "options cannot contain :out" if options.include?(:out)
     raise ArgumentError, "options cannot contain :err" if options.include?(:err)
+    raise ArgumentError, "options cannot contain :in if :in_data is specified" if options.include?(:in) && options.include?(:in_data)
     options = options.dup
     params  = options.delete(:params)
+    in_data = options.delete(:in_data)
 
     output        = ""
     error         = ""
@@ -57,7 +67,7 @@ module AwesomeSpawn
     command_line  = build_command_line(command, params)
 
     begin
-      output, error = launch(command_line, options)
+      output, error = launch(command_line, in_data, options)
       status = exitstatus
     ensure
       output ||= ""
@@ -138,20 +148,34 @@ module AwesomeSpawn
   # http://stackoverflow.com/questions/13829830/ruby-process-spawn-stdout-pipe-buffer-size-limit/13846146#13846146
   THREAD_SYNC_KEY = "#{self.name}-exitstatus"
 
-  def launch(command, spawn_options = {})
+  def launch(command, in_data, spawn_options = {})
     out_r, out_w = IO.pipe
     err_r, err_w = IO.pipe
-    pid = Kernel.spawn(command, {:err => err_w, :out => out_w}.merge(spawn_options))
-    wait_for_process(pid, out_w, err_w)
+    in_r,  in_w  = IO.pipe if in_data
+
+    spawn_options[:out] = out_w
+    spawn_options[:err] = err_w
+    spawn_options[:in]  = in_r if in_data
+
+    pid = Kernel.spawn(command, spawn_options)
+
+    write_to_input(in_w, in_data) if in_data
+    wait_for_process(pid, out_w, err_w, in_r)
     wait_for_pipes(out_r, err_r)
   end
 
-  def wait_for_process(pid, out_w, err_w)
+  def write_to_input(in_w, in_data)
+    in_w.write(in_data)
+    in_w.close
+  end
+
+  def wait_for_process(pid, out_w, err_w, in_r)
     self.exitstatus = :not_done
     Thread.new(Thread.current) do |parent_thread|
       _, status = Process.wait2(pid)
       out_w.close
       err_w.close
+      in_r.close if in_r
       parent_thread[THREAD_SYNC_KEY] = status.exitstatus
     end
   end
