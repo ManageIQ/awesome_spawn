@@ -6,11 +6,13 @@ describe AwesomeSpawn do
 
   let(:params) do
     {
-      "--user"  => "bob",
-      "--pass"  => "P@$sw0^& |<>/-+*d%",
-      "--db"    => nil,
-      "--desc=" => "Some Description",
-      nil       => ["pkg1", "some pkg"]
+      "--user"     => "bob",
+      "--pass"     => "P@$sw0^& |<>/-+*d%",
+      "--db"       => nil,
+      "--desc="    => "Some Description",
+      :symkey      => nil,
+      :symkey_dash => nil,
+      nil          => ["pkg1", "some pkg"]
     }
   end
 
@@ -134,7 +136,27 @@ describe AwesomeSpawn do
   context ".build_command_line" do
     it "sanitizes crazy params" do
       cl = subject.build_command_line("true", modified_params)
-      expect(cl).to eq "true --user bob --pass P@\\$sw0\\^\\&\\ \\|\\<\\>/-\\+\\*d\\% --db --desc=Some\\ Description pkg1 some\\ pkg --pool 123 --pool 456"
+      expect(cl).to eq "true --user bob --pass P@\\$sw0\\^\\&\\ \\|\\<\\>/-\\+\\*d\\% --db --desc=Some\\ Description --symkey --symkey-dash pkg1 some\\ pkg --pool 123 --pool 456"
+    end
+
+    it "handles Symbol keys" do
+      cl = subject.build_command_line("true", :abc => "def")
+      expect(cl).to eq "true --abc def"
+    end
+
+    it "handles Symbol keys with tailing '='" do
+      cl = subject.build_command_line("true", :abc= => "def")
+      expect(cl).to eq "true --abc=def"
+    end
+
+    it "handles Symbol keys with underscore" do
+      cl = subject.build_command_line("true", :abc_def => "ghi")
+      expect(cl).to eq "true --abc-def ghi"
+    end
+
+    it "handles Symbol keys with underscore and tailing '='" do
+      cl = subject.build_command_line("true", :abc_def= => "ghi")
+      expect(cl).to eq "true --abc-def=ghi"
     end
 
     it "sanitizes Fixnum array param value" do
