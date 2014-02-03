@@ -31,7 +31,7 @@ module AwesomeSpawn
   #   result.exit_status  # => 1
   #
   # @example With parameters sanitized
-  #   result = AwesomeSpawn.run('echo', :params => {"--out" => "; rm /some/file"})
+  #   result = AwesomeSpawn.run('echo', :params => {:out => "; rm /some/file"})
   #   # => #<AwesomeSpawn::CommandResult:0x007ff64baa6650 @exit_status=0>
   #   result.command_line
   #   # => "echo --out \\;\\ rm\\ /some/file"
@@ -108,11 +108,15 @@ module AwesomeSpawn
   # @param [String] command The command to run
   # @param [Hash,Array] params Optional command line parameters. They can
   #   be passed as a Hash or associative Array. The values are sanitized to
-  #   prevent command line injection.
+  #   prevent command line injection.  Keys as symbols are prefixed with `--`,
+  #   and `_` is replaced with `-`.
   #
+  #   - `{:key => "value"}`            generates `--key value`
   #   - `{"--key" => "value"}`         generates `--key value`
+  #   - `{:key= => "value"}`           generates `--key=value`
   #   - `{"--key=" => "value"}`        generates `--key=value`
-  #   - `{"--key" => nil}`             generates `--key`
+  #   - `{:key_name => "value"}`       generates `--key-name value`
+  #   - `{:key => nil}`                generates `--key`
   #   - `{"-f" => ["file1", "file2"]}` generates `-f file1 file2`
   #   - `{nil => ["file1", "file2"]}`  generates `file1 file2`
   #
@@ -127,12 +131,22 @@ module AwesomeSpawn
   def sanitize(params)
     return [] if params.nil? || params.empty?
     params.collect do |k, v|
-      v = case v
-          when Array;    v.collect {|i| i.to_s.shellescape}
-          when NilClass; v
-          else           v.to_s.shellescape
-          end
-      [k, v]
+      [sanitize_key(k), sanitize_value(v)]
+    end
+  end
+
+  def sanitize_key(key)
+    case key
+    when Symbol then "--#{key.to_s.tr("_", "-")}"
+    else             key
+    end
+  end
+
+  def sanitize_value(value)
+    case value
+    when Array    then value.collect { |i| i.to_s.shellescape }
+    when NilClass then value
+    else               value.to_s.shellescape
     end
   end
 
