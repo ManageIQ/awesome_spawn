@@ -11,6 +11,7 @@ AwesomeSpawn is a module that provides some useful features over Ruby's Kernel.s
 Some additional features include...
 
 - Parameter passing as a Hash or associative Array sanitizing them to prevent command line injection.
+- Ability to pass the contents of stdin as a String.
 - Results returned as an object giving access to the output stream, error stream, and exit status.
 - Optionally raising an exception when exit status is not 0.
 
