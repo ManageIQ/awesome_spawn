@@ -20,7 +20,10 @@ RSpec.configure do |config|
   end
 end
 
-require 'coveralls'
-Coveralls.wear!
+begin
+  require 'coveralls'
+  Coveralls.wear!
+rescue LoadError
+end
 
 require 'awesome_spawn'
