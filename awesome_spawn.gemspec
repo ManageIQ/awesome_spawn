@@ -20,9 +20,11 @@ Gem::Specification.new do |spec|
   spec.homepage      = "https://github.com/ManageIQ/awesome_spawn"
   spec.license       = "MIT"
 
-  spec.files         = `git ls-files`.split($/)
-  spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
-  spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
+  spec.files         = `git ls-files -- lib/*`.split("\n")
+  spec.files        += %w[.yardopts README.md LICENSE.txt]
+  spec.executables   = `git ls-files -- bin/*`.split("\n")
+  spec.test_files    = `git ls-files -- spec/*`.split("\n")
+  spec.test_files   += %w[.rspec]
   spec.require_paths = ["lib"]
 
   spec.add_development_dependency "bundler", "~> 1.3"
