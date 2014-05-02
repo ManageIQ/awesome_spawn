@@ -9,6 +9,14 @@ module AwesomeSpawn
       @exit_status  = exit_status
     end
 
+    def success?
+      exit_status == 0
+    end
+
+    def failure?
+      exit_status != 0
+    end
+
     def inspect
       "#{to_s.chop} @exit_status=#{@exit_status}>"
     end
