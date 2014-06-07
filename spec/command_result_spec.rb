@@ -5,9 +5,9 @@ describe AwesomeSpawn::CommandResult do
     it "will not display sensitive information" do
       str = described_class.new("aaa", "bbb", "ccc", 0).inspect
 
-      expect(str.include?("aaa")).to be_false
-      expect(str.include?("bbb")).to be_false
-      expect(str.include?("ccc")).to be_false
+      expect(str).to_not include("aaa")
+      expect(str).to_not include("bbb")
+      expect(str).to_not include("ccc")
     end
 
     it "will know if a command succeeded" do
