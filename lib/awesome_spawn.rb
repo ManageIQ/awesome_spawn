@@ -4,6 +4,7 @@ require "awesome_spawn/command_result_error"
 require "awesome_spawn/no_such_file_error"
 
 require "shellwords"
+require "open3"
 
 module AwesomeSpawn
   extend self
@@ -61,18 +62,14 @@ module AwesomeSpawn
     params  = options.delete(:params)
     in_data = options.delete(:in_data)
 
-    output        = ""
-    error         = ""
-    status        = nil
-    command_line  = build_command_line(command, params)
+    output, error, status = "", "", nil
+    command_line = build_command_line(command, params)
 
     begin
-      output, error = launch(command_line, in_data, options)
-      status = exitstatus
+      output, error, status = launch(command_line, in_data, options)
     ensure
       output ||= ""
       error  ||= ""
-      self.exitstatus = nil
     end
   rescue Errno::ENOENT => err
     raise NoSuchFileError.new(err.message) if NoSuchFileError.detected?(err.message)
@@ -157,55 +154,10 @@ module AwesomeSpawn
     end.join(" ")
   end
 
-  # IO pipes have a maximum size of 64k before blocking,
-  # so we need to read and write synchronously.
-  # http://stackoverflow.com/questions/13829830/ruby-process-spawn-stdout-pipe-buffer-size-limit/13846146#13846146
-  THREAD_SYNC_KEY = "#{self.name}-exitstatus"
-
   def launch(command, in_data, spawn_options = {})
-    out_r, out_w = IO.pipe
-    err_r, err_w = IO.pipe
-    in_r,  in_w  = IO.pipe if in_data
-
-    spawn_options[:out] = out_w
-    spawn_options[:err] = err_w
-    spawn_options[:in]  = in_r if in_data
-
-    pid = Kernel.spawn(command, spawn_options)
-
-    write_to_input(in_w, in_data) if in_data
-    wait_for_process(pid, out_w, err_w, in_r)
-    wait_for_pipes(out_r, err_r)
-  end
-
-  def write_to_input(in_w, in_data)
-    in_w.write(in_data)
-    in_w.close
-  end
-
-  def wait_for_process(pid, out_w, err_w, in_r)
-    self.exitstatus = :not_done
-    Thread.new(Thread.current) do |parent_thread|
-      _, status = Process.wait2(pid)
-      out_w.close
-      err_w.close
-      in_r.close if in_r
-      parent_thread[THREAD_SYNC_KEY] = status.exitstatus
-    end
-  end
-
-  def wait_for_pipes(out_r, err_r)
-    out = out_r.read
-    err = err_r.read
-    sleep(0.1) while exitstatus == :not_done
-    return out, err
-  end
-
-  def exitstatus
-    Thread.current[THREAD_SYNC_KEY]
-  end
-
-  def exitstatus=(value)
-    Thread.current[THREAD_SYNC_KEY] = value
+    spawn_options = spawn_options.merge(:stdin_data => in_data) if in_data
+    output, error, status = Open3.capture3(command, spawn_options)
+    status &&= status.exitstatus
+    return output, error, status
   end
 end

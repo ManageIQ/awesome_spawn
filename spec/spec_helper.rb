@@ -15,9 +15,15 @@ RSpec.configure do |config|
   #     --seed 1234
   config.order = 'random'
 
-  config.before do
-    Kernel.stub(:spawn).and_raise("Spawning is not permitted in specs.  Please change your spec to use expectations/stubs.")
-  end
+  config.before { disable_spawning }
+end
+
+def disable_spawning
+  Open3.stub(:capture3).and_raise("Spawning is not permitted in specs.  Please change your spec to use expectations/stubs.")
+end
+
+def enable_spawning
+  Open3.stub(:capture3).and_call_original
 end
 
 begin
