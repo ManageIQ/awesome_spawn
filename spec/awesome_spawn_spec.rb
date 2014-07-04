@@ -4,25 +4,10 @@ require 'pathname' # For Pathname specific specs
 describe AwesomeSpawn do
   subject { described_class }
 
-  let(:params) do
-    {
-      "--user"     => "bob",
-      "--pass"     => "P@$sw0^& |<>/-+*d%",
-      "--db"       => nil,
-      "--desc="    => "Some Description",
-      :symkey      => nil,
-      :symkey_dash => nil,
-      nil          => ["pkg1", "some pkg"]
-    }
-  end
-
-  let (:modified_params) do
-    params.to_a + [123, 456].collect {|pool| ["--pool", pool]}
-  end
-
   shared_examples_for "run" do
     context "options" do
       it ":params won't be modified" do
+        params      = {:user => "bob"}
         orig_params = params.dup
         subject.stub(:launch => ["", "", 0])
         subject.send(run_method, "true", :params => params)
