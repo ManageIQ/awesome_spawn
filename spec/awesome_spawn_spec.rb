@@ -22,13 +22,9 @@ describe AwesomeSpawn do
 
   shared_examples_for "run" do
     context "options" do
-      before do
-        subject.stub(:exitstatus => 0)
-      end
-
       it ":params won't be modified" do
         orig_params = params.dup
-        subject.stub(:launch)
+        subject.stub(:launch => ["", "", 0])
         subject.send(run_method, "true", :params => params)
         expect(orig_params).to eq(params)
       end
@@ -49,7 +45,7 @@ describe AwesomeSpawn do
     context "with real execution" do
       before do
         # Re-enable actual spawning just for these specs.
-        Kernel.stub(:spawn).and_call_original
+        enable_spawning
       end
 
       it "command ok exit ok" do
