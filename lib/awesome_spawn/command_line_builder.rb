@@ -7,53 +7,101 @@ module AwesomeSpawn
     # @param [String] command The command to run
     # @param [Hash,Array] params Optional command line parameters. They can
     #   be passed as a Hash or associative Array. The values are sanitized to
-    #   prevent command line injection.  Keys as symbols are prefixed with `--`,
+    #   prevent command line injection.  Keys as Symbols are prefixed with `--`,
     #   and `_` is replaced with `-`.
     #
     #   - `{:key => "value"}`            generates `--key value`
-    #   - `{"--key" => "value"}`         generates `--key value`
+    #   - `[[:key, "value"]]`            generates `--key value`
     #   - `{:key= => "value"}`           generates `--key=value`
+    #   - `[[:key=, "value"]]`           generates `--key=value` <br /><br />
+    #
+    #   - `{"--key" => "value"}`         generates `--key value`
+    #   - `[["--key", "value"]]`         generates `--key value`
     #   - `{"--key=" => "value"}`        generates `--key=value`
+    #   - `[["--key=", "value"]]`        generates `--key=value` <br /><br />
+    #
     #   - `{:key_name => "value"}`       generates `--key-name value`
-    #   - `{:key => nil}`                generates `--key`
+    #   - `[[:key_name, "value"]]`       generates `--key-name value`
+    #   - `{:key_name= => "value"}`       generates `--key-name=value`
+    #   - `[[:key_name=, "value"]]`       generates `--key-name=value` <br /><br />
+    #
     #   - `{"-f" => ["file1", "file2"]}` generates `-f file1 file2`
+    #   - `[["-f", "file1", "file2"]]`   generates `-f file1 file2` <br /><br />
+    #
+    #   - `{:key => nil}`                generates `--key`
+    #   - `[[:key, nil]]`                generates `--key`
+    #   - `[[:key]]`                     generates `--key` <br /><br />
+    #
     #   - `{nil => ["file1", "file2"]}`  generates `file1 file2`
+    #   - `[[nil, ["file1", "file2"]]]`  generates `file1 file2`
+    #   - `[[nil, "file1", "file2"]]`    generates `file1 file2`
+    #   - `[["file1", "file2"]]`         generates `file1 file2`
     #
     # @return [String] The full command line
     def build(command, params = nil)
-      return command.to_s if params.nil? || params.empty?
-      "#{command} #{assemble_params(sanitize(params))}"
+      params = assemble_params(sanitize(params))
+      params.empty? ? command.to_s : "#{command} #{params}"
     end
 
     private
 
+    def assemble_params(sanitized_params)
+      sanitized_params.collect do |group|
+        joiner = group.first.to_s.end_with?("=") ? "" : " "
+        group.compact.join(joiner)
+      end.join(" ")
+    end
+
     def sanitize(params)
       return [] if params.nil? || params.empty?
-      params.collect do |k, v|
-        [sanitize_key(k), sanitize_value(v)]
+      sanitize_associative_array(params.to_a)
+    end
+
+    def sanitize_associative_array(array)
+      array.collect { |a| sanitize_item(a) }
+    end
+
+    def sanitize_item(item)
+      case item
+      when Array then sanitize_key_values(item[0], item[1..-1])
+      when Hash  then sanitize_associative_array(item.to_a)
+      else            sanitize_item([item])
       end
     end
 
+    def sanitize_key_values(key, values)
+      [sanitize_key(key), *sanitize_value(values)]
+    end
+
+    KEY_REGEX = /^((?:--?)?)(.+?)(=?)$/
+
     def sanitize_key(key)
+      return key if key.nil?
+      key = convert_symbol_key(key) if key.kind_of?(Symbol)
+
       case key
-      when Symbol then "--#{key.to_s.tr("_", "-")}"
-      else             key
+      when String
+        return key if key.empty?
+        prefix, key, suffix = KEY_REGEX.match(key)[1..3]
+        "#{prefix}#{sanitize_value(key)}#{suffix}"
+      else
+        sanitize_value(key)
       end
+    end
+
+    def convert_symbol_key(key)
+      "--#{key.to_s.tr("_", "-")}"
     end
 
     def sanitize_value(value)
       case value
-      when Array    then value.collect { |i| i.to_s.shellescape }
-      when NilClass then value
-      else               value.to_s.shellescape
+      when Enumerable
+        value.to_a.collect { |i| sanitize_value(i) }.compact
+      when NilClass
+        value
+      else
+        value.to_s.shellescape
       end
-    end
-
-    def assemble_params(sanitized_params)
-      sanitized_params.collect do |pair|
-        pair_joiner = pair.first.to_s.end_with?("=") ? "" : " "
-        pair.flatten.compact.join(pair_joiner)
-      end.join(" ")
     end
   end
 end
