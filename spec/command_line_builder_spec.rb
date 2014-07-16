@@ -165,24 +165,28 @@ describe AwesomeSpawn::CommandLineBuilder do
         assert_params([["--", nil]], "--")
       end
 
-      it "key alone" do
+      it "with key alone" do
         assert_params([["--abc"]], "--abc")
       end
 
-      it "key as Symbol alone" do
+      it "with key as Symbol alone" do
         assert_params([[:abc]], "--abc")
       end
 
-      it "key as a bareword" do
+      it "with key as a bareword" do
         assert_params(["--abc"], "--abc")
       end
 
-      it "key as bareword Symbol" do
+      it "with key as bareword Symbol" do
         assert_params([:abc], "--abc")
       end
 
-      it "value as a bareword" do
+      it "with value as a bareword" do
         assert_params(["abc"], "abc")
+      end
+
+      it "with entry as a nested Hash" do
+        assert_params([{:abc_def= => "ghi"}], "--abc-def=ghi")
       end
 
       it "with value as Symbol" do

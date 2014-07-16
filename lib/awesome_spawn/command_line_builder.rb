@@ -57,20 +57,22 @@ module AwesomeSpawn
       sanitize_associative_array(params.to_a)
     end
 
-    def sanitize_associative_array(array)
-      array.collect { |a| sanitize_item(a) }
+    def sanitize_associative_array(assoc_array)
+      assoc_array.each.with_object([]) do |item, array|
+        array.concat(sanitize_item(item))
+      end
     end
 
     def sanitize_item(item)
       case item
       when Array then sanitize_key_values(item[0], item[1..-1])
       when Hash  then sanitize_associative_array(item.to_a)
-      else            sanitize_item([item])
+      else            sanitize_key_values(item, [])
       end
     end
 
     def sanitize_key_values(key, values)
-      [sanitize_key(key), *sanitize_value(values)]
+      [[sanitize_key(key), *sanitize_value(values)]]
     end
 
     KEY_REGEX = /^((?:--?)?)(.+?)(=?)$/
