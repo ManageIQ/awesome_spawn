@@ -60,13 +60,15 @@ module AwesomeSpawn
     raise ArgumentError, "options cannot contain :in if :in_data is specified" if options.include?(:in) && options.include?(:in_data)
     options = options.dup
     params  = options.delete(:params)
-    in_data = options.delete(:in_data)
+    if (in_data = options.delete(:in_data))
+      options[:stdin_data] = in_data
+    end
 
     output, error, status = "", "", nil
     command_line = build_command_line(command, params)
 
     begin
-      output, error, status = launch(command_line, in_data, options)
+      output, error, status = launch(command_line, options)
     ensure
       output ||= ""
       error  ||= ""
@@ -107,8 +109,7 @@ module AwesomeSpawn
 
   private
 
-  def launch(command, in_data, spawn_options = {})
-    spawn_options = spawn_options.merge(:stdin_data => in_data) if in_data
+  def launch(command, spawn_options = {})
     output, error, status = Open3.capture3(command, spawn_options)
     status &&= status.exitstatus
     return output, error, status
