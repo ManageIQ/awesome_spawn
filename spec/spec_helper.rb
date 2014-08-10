@@ -5,7 +5,6 @@
 #
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 RSpec.configure do |config|
-  config.treat_symbols_as_metadata_keys_with_true_values = true
   config.run_all_when_everything_filtered = true
   config.filter_run :focus
 
@@ -19,11 +18,12 @@ RSpec.configure do |config|
 end
 
 def disable_spawning
-  Open3.stub(:capture3).and_raise("Spawning is not permitted in specs.  Please change your spec to use expectations/stubs.")
+  allow(Open3).to receive(:capture3)
+    .and_raise("Spawning is not permitted in specs.  Please change your spec to use expectations/stubs.")
 end
 
 def enable_spawning
-  Open3.stub(:capture3).and_call_original
+  allow(Open3).to receive(:capture3).and_call_original
 end
 
 begin
