@@ -39,6 +39,14 @@ describe AwesomeSpawn::CommandLineBuilder do
         assert_params({"--user=" => "bob"}, "--user=bob")
       end
 
+      it "with single letter symbol" do
+        assert_params({:a => "val"}, "-a val")
+      end
+
+      it "with single letter symbol" do
+        assert_params({:a= => "val"}, "-a=val")
+      end
+
       it "with value requiring sanitization" do
         assert_params({"--pass" => "P@$s w0rd%"}, "--pass P@\\$s\\ w0rd\\%")
       end

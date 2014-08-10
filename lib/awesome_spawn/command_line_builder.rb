@@ -10,6 +10,11 @@ module AwesomeSpawn
     #   prevent command line injection.  Keys as Symbols are prefixed with `--`,
     #   and `_` is replaced with `-`.
     #
+    #   - `{:k => "value"}`              generates `-k value`
+    #   - `[[:k, "value"]]`              generates `-k value`
+    #   - `{:k => "value"}`              generates `-k=value`
+    #   - `[[:k=, "value"]]`             generates `-k=value` <br /><br />
+    #
     #   - `{:key => "value"}`            generates `--key value`
     #   - `[[:key, "value"]]`            generates `--key value`
     #   - `{:key= => "value"}`           generates `--key=value`
@@ -92,7 +97,9 @@ module AwesomeSpawn
     end
 
     def convert_symbol_key(key)
-      "--#{key.to_s.tr("_", "-")}"
+      key = key.to_s
+      dash = key =~ /^.=?$/ ? "-" : "--"
+      "#{dash}#{key.tr("_", "-")}"
     end
 
     def sanitize_value(value)
