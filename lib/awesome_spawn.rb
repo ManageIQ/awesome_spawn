@@ -67,12 +67,7 @@ module AwesomeSpawn
     output, error, status = "", "", nil
     command_line = build_command_line(command, params)
 
-    begin
-      output, error, status = launch(command_line, options)
-    ensure
-      output ||= ""
-      error  ||= ""
-    end
+    output, error, status = launch(command_line, options)
   rescue Errno::ENOENT => err
     raise NoSuchFileError.new(err.message) if NoSuchFileError.detected?(err.message)
     raise
@@ -94,7 +89,7 @@ module AwesomeSpawn
   def run!(command, options = {})
     command_result = run(command, options)
 
-    if command_result.exit_status != 0
+    if command_result.failure?
       message = "#{command} exit code: #{command_result.exit_status}"
       raise CommandResultError.new(message, command_result)
     end
@@ -111,7 +106,6 @@ module AwesomeSpawn
 
   def launch(command, spawn_options = {})
     output, error, status = Open3.capture3(command, spawn_options)
-    status &&= status.exitstatus
-    return output, error, status
+    return output || "", error || "", status && status.exitstatus
   end
 end
