@@ -9,7 +9,7 @@ describe AwesomeSpawn do
       it ":params won't be modified" do
         params      = {:user => "bob"}
         orig_params = params.dup
-        subject.stub(:launch => ["", "", 0])
+        allow(subject).to receive(:launch).and_return(["", "", 0])
         subject.send(run_method, "true", :params => params)
         expect(orig_params).to eq(params)
       end
