@@ -7,10 +7,10 @@ describe AwesomeSpawn do
   shared_examples_for "run" do
     context "options" do
       it ":params won't be modified" do
-        params      = {:user => "bob"}
+        params      = {:params => {:user => "bob"}}
         orig_params = params.dup
-        allow(subject).to receive(:launch).and_return(["", "", 0])
-        subject.send(run_method, "true", :params => params)
+        allow(subject).to receive(:launch).with("true --user bob", {}).and_return(["", "", 0])
+        subject.send(run_method, "true", params)
         expect(orig_params).to eq(params)
       end
 
@@ -19,11 +19,15 @@ describe AwesomeSpawn do
       end
 
       it ":out is not supported" do
-        expect { subject.send(run_method, "true", :out => "/dev/null") }.to raise_error(ArgumentError)
+        expect do
+          subject.send(run_method, "true", :out => "/dev/null")
+        end.to raise_error(ArgumentError, "options cannot contain :out")
       end
 
       it ":err is not supported" do
-        expect { subject.send(run_method, "true", :err => "/dev/null") }.to raise_error(ArgumentError)
+        expect do
+          subject.send(run_method, "true", :err => "/dev/null")
+        end.to raise_error(ArgumentError, "options cannot contain :err")
       end
     end
 
@@ -53,7 +57,9 @@ describe AwesomeSpawn do
       end
 
       it "command bad" do
-        expect { subject.send(run_method, "XXXXX --user=bob") }.to raise_error(Errno::ENOENT, "No such file or directory - XXXXX")
+        expect do
+          subject.send(run_method, "XXXXX --user=bob")
+        end.to raise_error(AwesomeSpawn::NoSuchFileError, "No such file or directory - XXXXX")
       end
 
       context "with option" do
@@ -67,6 +73,18 @@ describe AwesomeSpawn do
           result = subject.send(run_method, "cat", :in_data => "line1\nline2")
           expect(result.exit_status).to eq(0)
           expect(result.output).to      eq("line1\nline2")
+        end
+      end
+
+      context "#exit_status" do
+        it "command ok exit ok" do
+          expect(subject.send(run_method, "echo", :params => %w(x)).command_line).to eq("echo x")
+        end
+
+        it "command ok exit bad" do
+          if run_method == "run"
+            expect(subject.send(run_method, "echo x && false").command_line).to eq("echo x && false")
+          end
         end
       end
 
@@ -99,6 +117,16 @@ describe AwesomeSpawn do
           expect(subject.send(run_method, "echo 'bad' >&2 && false").error).to eq("bad\n") if run_method == "run"
         end
       end
+    end
+  end
+
+  context ".build_command_line" do
+    it "should handle single parameter" do
+      expect(subject.build_command_line("cmd")).to eq("cmd")
+    end
+
+    it "should handle multi parameter" do
+      expect(subject.build_command_line("cmd", :status => true)).to eq("cmd --status true")
     end
   end
 

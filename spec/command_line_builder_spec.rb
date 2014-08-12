@@ -16,6 +16,14 @@ describe AwesomeSpawn::CommandLineBuilder do
       expect(subject.build("true", nil)).to eq "true"
     end
 
+    it "with empty" do
+      expect(subject.build("true", "")).to eq "true"
+    end
+
+    it "with empty" do
+      expect(subject.build("true", [])).to eq "true"
+    end
+
     it "with Pathname command" do
       actual = subject.build(Pathname.new("/usr/bin/ruby"))
       expect(actual).to eq "/usr/bin/ruby"
@@ -195,6 +203,10 @@ describe AwesomeSpawn::CommandLineBuilder do
 
       it "with value as Array" do
         assert_params([["--abc", ["def", "ghi"]]], "--abc def ghi")
+      end
+
+      it "with value as Array and extra nils" do
+        assert_params([["--abc", [nil, "def", nil, "ghi", nil]]], "--abc def ghi")
       end
 
       it "with value as flattened Array" do
