@@ -60,17 +60,14 @@ module AwesomeSpawn
     raise ArgumentError, "options cannot contain :in if :in_data is specified" if options.include?(:in) && options.include?(:in_data)
     options = options.dup
     params  = options.delete(:params)
-    in_data = options.delete(:in_data)
+    if (in_data = options.delete(:in_data))
+      options[:stdin_data] = in_data
+    end
 
     output, error, status = "", "", nil
     command_line = build_command_line(command, params)
 
-    begin
-      output, error, status = launch(command_line, in_data, options)
-    ensure
-      output ||= ""
-      error  ||= ""
-    end
+    output, error, status = launch(command_line, options)
   rescue Errno::ENOENT => err
     raise NoSuchFileError.new(err.message) if NoSuchFileError.detected?(err.message)
     raise
@@ -92,7 +89,7 @@ module AwesomeSpawn
   def run!(command, options = {})
     command_result = run(command, options)
 
-    if command_result.exit_status != 0
+    if command_result.failure?
       message = "#{command} exit code: #{command_result.exit_status}"
       raise CommandResultError.new(message, command_result)
     end
@@ -107,10 +104,8 @@ module AwesomeSpawn
 
   private
 
-  def launch(command, in_data, spawn_options = {})
-    spawn_options = spawn_options.merge(:stdin_data => in_data) if in_data
+  def launch(command, spawn_options = {})
     output, error, status = Open3.capture3(command, spawn_options)
-    status &&= status.exitstatus
-    return output, error, status
+    return output || "", error || "", status && status.exitstatus
   end
 end
