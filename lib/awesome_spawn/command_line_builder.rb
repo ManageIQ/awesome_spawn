@@ -97,6 +97,8 @@ module AwesomeSpawn
 
     def sanitize_value(value)
       case value
+      when String
+        value.shellescape
       when Enumerable
         value.to_a.collect { |i| sanitize_value(i) }.compact
       when NilClass
