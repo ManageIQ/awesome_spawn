@@ -106,9 +106,17 @@ describe AwesomeSpawn do
         it "command ok exit bad" do
           expect(subject.send(run_method, "echo 'bad' && false").output).to eq("bad\n") if run_method == "run"
         end
+
+        it "has output even though output redirected to stderr" do
+          expect(subject.send(run_method, "echo \"Hello World\" >&2").output).to eq("")
+        end
       end
 
       context "#error" do
+        it "has error even though no error" do
+          expect(subject.send(run_method, "echo", :params => ["Hello World"]).error).to eq("")
+        end
+
         it "command ok exit ok" do
           expect(subject.send(run_method, "echo \"Hello World\" >&2").error).to eq("Hello World\n")
         end
