@@ -14,8 +14,10 @@ describe AwesomeSpawn do
         expect(orig_params).to eq(params)
       end
 
-      it ":in_data cannot be passed with :in" do
-        expect { subject.send(run_method, "true", :in_data => "XXXXX", :in => "/dev/null") } .to raise_error(ArgumentError)
+      it ":in is not supported" do
+        expect do
+          subject.send(run_method, "true", :in => "/dev/null")
+        end.to raise_error(ArgumentError, "options cannot contain :in")
       end
 
       it ":out is not supported" do
