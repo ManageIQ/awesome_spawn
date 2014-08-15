@@ -262,6 +262,11 @@ describe AwesomeSpawn::CommandLineBuilder do
         assert_params(params, expected)
       end
 
+      it "as mixed Array" do
+        params = ["log", "feature", "-E", :oneline, :grep, "abc"]
+        assert_params(params, expected)
+      end
+
       it "as mixed Array with nested Hashes" do
         params = ["log", "feature", "-E", :oneline, {:grep => "abc"}]
         assert_params(params, expected)
