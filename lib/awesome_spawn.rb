@@ -3,11 +3,18 @@ require "awesome_spawn/command_line_builder"
 require "awesome_spawn/command_result"
 require "awesome_spawn/command_result_error"
 require "awesome_spawn/no_such_file_error"
+require "awesome_spawn/null_logger"
 
 require "open3"
 
 module AwesomeSpawn
   extend self
+
+  attr_writer :logger
+
+  def logger
+    @logger ||= NullLogger.new
+  end
 
   # Execute `command` synchronously via Kernel.spawn and gather the output
   #   stream, error stream, and exit status in a {CommandResult}.
