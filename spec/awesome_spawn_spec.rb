@@ -6,11 +6,19 @@ describe AwesomeSpawn do
 
   shared_examples_for "run" do
     context "options" do
-      it ":params won't be modified" do
+      it "params won't be modified" do
         params      = {:params => {:user => "bob"}}
         orig_params = params.dup
         allow(subject).to receive(:launch).with("true --user bob", {}).and_return(["", "", 0])
         subject.send(run_method, "true", params)
+        expect(orig_params).to eq(params)
+      end
+
+      it ":params won't be modified" do
+        params      = {:user => "bob"}
+        orig_params = params.dup
+        allow(subject).to receive(:launch).with("true --user bob", {}).and_return(["", "", 0])
+        subject.send(run_method, "true", :params => params)
         expect(orig_params).to eq(params)
       end
 
