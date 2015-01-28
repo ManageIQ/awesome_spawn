@@ -1,17 +1,18 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## v1.2.2 - 2014-08-12
-
+## [Unreleased][unreleased]
 ### Added
 - This CHANGELOG file to help users track progress of this gem. More information can be found at http://keepachangelog.com/
-- Better support for parameters in short form. Now, a letter parameter generates a command line with only 1 dash.
+- Fix rspec deprecation warnings
+- Logging errors in ```run!``` and a default NullLogger.  Set logger with ```AwesomeSpawn.logger = Logger.new(STDOUT)```
 
-### Deprecated
-- Nothing.
+## [v1.2.1] - 2014-07-17
 
-### Removed
-- Nothing.
+## [v1.2.0] - 2014-07-08
 
-### Fixed
-- Nothing.
+## [v1.1.1] - 2014-02-03
+
+## [v1.1.0] - 2014-02-03
+
+## [v1.0.0] - 2014-01-04
