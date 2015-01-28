@@ -52,11 +52,10 @@ module AwesomeSpawn
   #
   # @param [String] command The command to run
   # @param [Hash] options The options for running the command.  Also accepts any
-  #   option that can be passed to Kernel.spawn, except `:out` and `:err`.
+  #   option that can be passed to Kernel.spawn, except `:in`, `:out` and `:err`.
   # @option options [Hash,Array] :params The command line parameters. See
   #   {#build_command_line} for how to specify params.
-  # @option options [String] :in_data Data to be passed on stdin.  If this option
-  #   is specified you cannot specify `:in`.
+  # @option options [String] :in_data Data to be passed on stdin.
   #
   # @raise [NoSuchFileError] if the `command` is not found
   # @return [CommandResult] the output stream, error stream, and exit status
@@ -64,7 +63,7 @@ module AwesomeSpawn
   def run(command, options = {})
     raise ArgumentError, "options cannot contain :out" if options.include?(:out)
     raise ArgumentError, "options cannot contain :err" if options.include?(:err)
-    raise ArgumentError, "options cannot contain :in if :in_data is specified" if options.include?(:in) && options.include?(:in_data)
+    raise ArgumentError, "options cannot contain :in" if options.include?(:in)
     options = options.dup
     params  = options.delete(:params)
     if (in_data = options.delete(:in_data))
