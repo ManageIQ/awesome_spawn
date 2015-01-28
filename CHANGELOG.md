@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased][unreleased]
+
+## [v1.3.0] - 2015-01-28
 ### Added
 - This CHANGELOG file to help users track progress of this gem. More information can be found at http://keepachangelog.com/
 - Fix rspec deprecation warnings
