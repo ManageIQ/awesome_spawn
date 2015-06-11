@@ -63,15 +63,13 @@ module AwesomeSpawn
   def run(command, options = {})
     bad_keys = (options.keys.flatten & [:in, :out, :err]).map { |k| ":#{k}" }
     raise ArgumentError, "options cannot contain #{bad_keys.join(", ")}" if bad_keys.any?
-    options = options.dup
-    params  = options.delete(:params)
+    env, command_line, options = parse_command_options(command, options)
+
     if (in_data = options.delete(:in_data))
       options[:stdin_data] = in_data
     end
 
-    command_line = build_command_line(command, params)
-
-    output, error, status = launch(command_line, options)
+    output, error, status = launch(env, command_line, options)
   rescue Errno::ENOENT => err
     raise NoSuchFileError.new(err.message) if NoSuchFileError.detected?(err.message)
     raise
@@ -110,8 +108,16 @@ module AwesomeSpawn
 
   private
 
-  def launch(command, spawn_options)
-    output, error, status = Open3.capture3(command, spawn_options)
+  def launch(env, command, spawn_options)
+    output, error, status = Open3.capture3(env, command, spawn_options)
     return output, error, status && status.exitstatus
+  end
+
+  def parse_command_options(command, options)
+    options = options.dup
+    params  = options.delete(:params)
+    env = options.delete(:env) || {}
+
+    [env, build_command_line(command, params), options]
   end
 end
