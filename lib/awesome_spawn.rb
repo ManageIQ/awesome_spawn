@@ -70,7 +70,6 @@ module AwesomeSpawn
       options[:stdin_data] = in_data
     end
 
-    output, error, status = "", "", nil
     command_line = build_command_line(command, params)
 
     output, error, status = launch(command_line, options)
@@ -112,8 +111,8 @@ module AwesomeSpawn
 
   private
 
-  def launch(command, spawn_options = {})
+  def launch(command, spawn_options)
     output, error, status = Open3.capture3(command, spawn_options)
-    return output || "", error || "", status && status.exitstatus
+    return output, error, status && status.exitstatus
   end
 end

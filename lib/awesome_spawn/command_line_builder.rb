@@ -59,7 +59,7 @@ module AwesomeSpawn
 
     def sanitize(params)
       return [] if params.nil? || params.empty?
-      sanitize_associative_array(params.to_a)
+      sanitize_associative_array(params)
     end
 
     def sanitize_associative_array(assoc_array)
@@ -71,8 +71,8 @@ module AwesomeSpawn
     def sanitize_item(item)
       case item
       when Array then sanitize_key_values(item[0], item[1..-1])
-      when Hash  then sanitize_associative_array(item.to_a)
-      else            sanitize_key_values(item, [])
+      when Hash  then sanitize_associative_array(item)
+      else            sanitize_key_values(item, nil)
       end
     end
 
@@ -83,12 +83,11 @@ module AwesomeSpawn
     KEY_REGEX = /^((?:--?)?)(.+?)(=?)$/
 
     def sanitize_key(key)
-      return key if key.nil?
+      return key if key.nil? || key.empty?
       key = convert_symbol_key(key) if key.kind_of?(Symbol)
 
       case key
       when String
-        return key if key.empty?
         prefix, key, suffix = KEY_REGEX.match(key)[1..3]
         "#{prefix}#{sanitize_value(key)}#{suffix}"
       else
@@ -105,7 +104,7 @@ module AwesomeSpawn
     def sanitize_value(value)
       case value
       when Enumerable
-        value.to_a.collect { |i| sanitize_value(i) }.compact
+        value.collect { |i| sanitize_value(i) }.compact
       when NilClass
         value
       else
