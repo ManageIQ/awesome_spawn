@@ -61,9 +61,8 @@ module AwesomeSpawn
   # @return [CommandResult] the output stream, error stream, and exit status
   # @see http://ruby-doc.org/core/Kernel.html#method-i-spawn Kernel.spawn
   def run(command, options = {})
-    raise ArgumentError, "options cannot contain :out" if options.include?(:out)
-    raise ArgumentError, "options cannot contain :err" if options.include?(:err)
-    raise ArgumentError, "options cannot contain :in" if options.include?(:in)
+    bad_keys = (options.keys.flatten & [:in, :out, :err]).map { |k| ":#{k}" }
+    raise ArgumentError, "options cannot contain #{bad_keys.join(", ")}" if bad_keys.any?
     options = options.dup
     params  = options.delete(:params)
     if (in_data = options.delete(:in_data))

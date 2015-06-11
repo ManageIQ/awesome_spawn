@@ -39,6 +39,12 @@ describe AwesomeSpawn do
           subject.send(run_method, "true", :err => "/dev/null")
         end.to raise_error(ArgumentError, "options cannot contain :err")
       end
+
+      it "array of outputs is not supported" do
+        expect do
+          subject.send(run_method, "true", [:err, :out, 3] => "/dev/null")
+        end.to raise_error(ArgumentError, "options cannot contain :err, :out")
+      end
     end
 
     context "with real execution" do
