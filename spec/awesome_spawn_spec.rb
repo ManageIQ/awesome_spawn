@@ -5,15 +5,20 @@ describe AwesomeSpawn do
   subject { described_class }
 
   shared_examples_for "parses" do
-    it "params won't be modified" do
-      params      = {:params => {:user => "bob"}}
-      orig_params = params.dup
-      allow(subject).to receive(:launch).with("true --user bob", {}).and_return(["", "", 0])
-      subject.send(run_method, "true", params)
-      expect(orig_params).to eq(params)
+    it "supports no options" do
+      allow(subject).to receive(:launch).with("true", {}).and_return(["", "", 0])
+      subject.send(run_method, "true")
     end
 
-    it ":params won't be modified" do
+    it "wont modify passed in options" do
+      options      = {:params => {:user => "bob"}}
+      orig_options = options.dup
+      allow(subject).to receive(:launch).with("true --user bob", {}).and_return(["", "", 0])
+      subject.send(run_method, "true", options)
+      expect(orig_options).to eq(options)
+    end
+
+    it "wont modify passed in options[:params]" do
       params      = {:user => "bob"}
       orig_params = params.dup
       allow(subject).to receive(:launch).with("true --user bob", {}).and_return(["", "", 0])
@@ -21,25 +26,25 @@ describe AwesomeSpawn do
       expect(orig_params).to eq(params)
     end
 
-    it ":in is not supported" do
+    it "warns about option :in" do
       expect do
         subject.send(run_method, "true", :in => "/dev/null")
       end.to raise_error(ArgumentError, "options cannot contain :in")
     end
 
-    it ":out is not supported" do
+    it "warns about option :out" do
       expect do
         subject.send(run_method, "true", :out => "/dev/null")
       end.to raise_error(ArgumentError, "options cannot contain :out")
     end
 
-    it ":err is not supported" do
+    it "warns about option :err" do
       expect do
         subject.send(run_method, "true", :err => "/dev/null")
       end.to raise_error(ArgumentError, "options cannot contain :err")
     end
 
-    it ":err is not supported when in an array" do
+    it "warns about option :err when in an array" do
       expect do
         subject.send(run_method, "true", [:err, :out, 3] => "/dev/null")
       end.to raise_error(ArgumentError, "options cannot contain :err, :out")
@@ -52,7 +57,7 @@ describe AwesomeSpawn do
       enable_spawning
     end
 
-    it "command ok exit ok" do
+    it "runs command" do
       expect(subject.send(run_method, "true")).to be_kind_of AwesomeSpawn::CommandResult
     end
 
@@ -71,28 +76,28 @@ describe AwesomeSpawn do
       end
     end
 
-    it "command bad" do
+    it "detects bad commands" do
       expect do
         subject.send(run_method, "XXXXX --user=bob")
       end.to raise_error(AwesomeSpawn::NoSuchFileError, "No such file or directory - XXXXX")
     end
 
-    context "with option" do
-      it ":chdir" do
+    describe "parameters" do
+      it "changes directory" do
         result = subject.send(run_method, "pwd", :chdir => "..")
         expect(result.exit_status).to  eq(0)
         expect(result.output.chomp).to eq(File.expand_path("..", Dir.pwd))
       end
 
-      it ":in_data" do
+      it "passes input" do
         result = subject.send(run_method, "cat", :in_data => "line1\nline2")
         expect(result.exit_status).to eq(0)
         expect(result.output).to      eq("line1\nline2")
       end
     end
 
-    context "#exit_status" do
-      it "command ok exit ok" do
+    describe "result" do
+      it "contains #command_line" do
         expect(subject.send(run_method, "echo", :params => %w(x)).command_line).to eq("echo x")
       end
 
@@ -142,13 +147,17 @@ describe AwesomeSpawn do
     end
   end
 
-  context ".build_command_line" do
-    it "should handle single parameter" do
+  describe ".build_command_line" do
+    it "supports no parameters" do
       expect(subject.build_command_line("cmd")).to eq("cmd")
     end
 
-    it "should handle multi parameter" do
+    it "supports single long parameter" do
       expect(subject.build_command_line("cmd", :status => true)).to eq("cmd --status true")
+    end
+
+    it "supports multiple long parameters" do
+      expect(subject.build_command_line("cmd", :status => true, :fast => false)).to eq("cmd --status true --fast false")
     end
   end
 
