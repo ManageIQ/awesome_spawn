@@ -4,6 +4,9 @@
 # loaded once.
 #
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
+
+require 'awesome_spawn/spec_helper'
+
 RSpec.configure do |config|
   config.run_all_when_everything_filtered = true
   config.filter_run :focus
@@ -14,16 +17,8 @@ RSpec.configure do |config|
   #     --seed 1234
   config.order = 'random'
 
+  include AwesomeSpawn::SpecHelper
   config.before { disable_spawning }
-end
-
-def disable_spawning
-  allow(Open3).to receive(:capture3)
-    .and_raise("Spawning is not permitted in specs.  Please change your spec to use expectations/stubs.")
-end
-
-def enable_spawning
-  allow(Open3).to receive(:capture3).and_call_original
 end
 
 begin
