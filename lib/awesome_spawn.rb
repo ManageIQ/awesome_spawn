@@ -114,6 +114,35 @@ module AwesomeSpawn
     command_result
   end
 
+  # Execute `command` in a detached manner
+  # The defalt is to spawn a new child process that sends the output to the null device
+  # @param [String] command the command to execute
+  # @param [Hash{Symbol,Object}] options the Kernel.spawn options
+  #   by default the :err, and :out are redirected to the null device.
+  #   For windows, default :pgroup_new is true (make a root process of a new process group)
+  #   For others,  default :pgroup is true (make a new process group)
+  # @returns [Integer] pid of new process
+  #
+  # @example With normal output
+  #   AwesomeSpawn.run_detached('echo "Hi" > /tmp/out')
+  #   # => 79901
+  #
+  # if a user defines :out or :err, it is assumed they will define both
+  def run_detached(command, options = {})
+    env, command_line, options = parse_command_options(command, options)
+    # maybe add support later for this
+    raise ArgumentError, "options cannot contain :in_data" if options.include?(:in_data)
+
+    options[[:out, :err]] = [IO::NULL, "w"] unless (options.keys.flatten & [:out, :err]).any?
+    if Gem.win_platform?
+      options[:new_pgroup]  = true unless options.key?(:new_pgroup)
+    else
+      options[:pgroup]      = true unless options.key?(:pgroup)
+    end
+
+    detach(env, command_line, options)
+  end
+
   # (see CommandLineBuilder#build)
   def build_command_line(command, params = nil)
     CommandLineBuilder.new.build(command, params)
@@ -138,5 +167,9 @@ module AwesomeSpawn
     env = options.delete(:env) || {}
 
     [env, build_command_line(command, params), options]
+  end
+
+  def detach(env, command, options)
+    Process.detach(Kernel.spawn(env, command, options)).pid
   end
 end
