@@ -61,21 +61,6 @@ describe AwesomeSpawn do
       expect(subject.send(run_method, "true")).to be_kind_of AwesomeSpawn::CommandResult
     end
 
-    it "command ok exit bad" do
-      if run_method == "run!"
-        error = nil
-
-        # raise_error with do/end block notation is broken in rspec-expectations 2.14.x
-        # and has been fixed in master but not yet released.
-        # See: https://github.com/rspec/rspec-expectations/commit/b0df827f4c12870aa4df2f20a817a8b01721a6af
-        expect { subject.send(run_method, "false") }.to raise_error {|e| error = e }
-        expect(error).to be_kind_of AwesomeSpawn::CommandResultError
-        expect(error.result).to be_kind_of AwesomeSpawn::CommandResult
-      else
-        expect { subject.send(run_method, "false") }.to_not raise_error
-      end
-    end
-
     it "detects bad commands" do
       expect do
         subject.send(run_method, "XXXXX --user=bob")
@@ -101,48 +86,49 @@ describe AwesomeSpawn do
         expect(subject.send(run_method, "echo", :params => %w(x)).command_line).to eq("echo x")
       end
 
-      it "command ok exit bad" do
-        if run_method == "run"
-          expect(subject.send(run_method, "echo x && false").command_line).to eq("echo x && false")
-        end
-      end
-    end
-
-    context "#exit_status" do
-      it "command ok exit ok" do
+      it "contains #exit_status" do
         expect(subject.send(run_method, "true").exit_status).to eq(0)
       end
 
-      it "command ok exit bad" do
-        expect(subject.send(run_method, "false").exit_status).to eq(1) if run_method == "run"
-      end
-    end
-
-    context "#output" do
-      it "command ok exit ok" do
+      it "contains #output" do
         expect(subject.send(run_method, "echo \"Hello World\"").output).to eq("Hello World\n")
       end
 
-      it "command ok exit bad" do
-        expect(subject.send(run_method, "echo 'bad' && false").output).to eq("bad\n") if run_method == "run"
-      end
-
-      it "has output even though output redirected to stderr" do
+      it "contains #output when output redirected to stderr)" do
         expect(subject.send(run_method, "echo \"Hello World\" >&2").output).to eq("")
       end
-    end
 
-    context "#error" do
-      it "has error even though no error" do
+      it "contains #error when no error" do
         expect(subject.send(run_method, "echo", :params => ["Hello World"]).error).to eq("")
       end
 
-      it "command ok exit ok" do
+      it "contains #error" do
         expect(subject.send(run_method, "echo \"Hello World\" >&2").error).to eq("Hello World\n")
       end
+    end
+  end
 
-      it "command ok exit bad" do
-        expect(subject.send(run_method, "echo 'bad' >&2 && false").error).to eq("bad\n") if run_method == "run"
+  shared_examples_for "executes with failures" do
+    context "result with a bad command" do
+      before do
+        # Re-enable actual spawning just for these specs.
+        enable_spawning
+      end
+
+      it "contains #command_line" do
+        expect(subject.send(run_method, "echo x && false").command_line).to eq("echo x && false")
+      end
+
+      it "contains #exit_status" do
+        expect(subject.send(run_method, "false").exit_status).to eq(1)
+      end
+
+      it "contains #output" do
+        expect(subject.send(run_method, "echo 'bad' && false").output).to eq("bad\n")
+      end
+
+      it "contains #error" do
+        expect(subject.send(run_method, "echo 'bad' >&2 && false").error).to eq("bad\n")
       end
     end
   end
@@ -165,11 +151,19 @@ describe AwesomeSpawn do
     let(:run_method) { "run" }
     include_examples "parses"
     include_examples "executes"
+    include_examples "executes with failures"
   end
 
   describe ".run!" do
     let(:run_method) { "run!" }
     include_examples "parses"
     include_examples "executes"
+
+    it "raises errors on failure" do
+      expect { subject.send(run_method, "false") }.to raise_error do |error|
+        expect(error).to be_kind_of AwesomeSpawn::CommandResultError
+        expect(error.result).to be_kind_of AwesomeSpawn::CommandResult
+      end
+    end
   end
 end
