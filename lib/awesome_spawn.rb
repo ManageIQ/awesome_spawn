@@ -50,12 +50,19 @@ module AwesomeSpawn
   #   result.output
   #   => "line1\nline2"
   #
+  # @example With environment variables passed in
+  #   result = AwesomeSpawn.run('echo ABC=${ABC}', :env => {"ABC" => "abcde"})
+  #   => #<AwesomeSpawn::CommandResult:0x007f9421a35590 @exit_status=0>
+  #   result.output
+  #   => "ABC=abcde\n"
+  #
   # @param [String] command The command to run
   # @param [Hash] options The options for running the command.  Also accepts any
   #   option that can be passed to Kernel.spawn, except `:in`, `:out` and `:err`.
   # @option options [Hash,Array] :params The command line parameters. See
   #   {#build_command_line} for how to specify params.
   # @option options [String] :in_data Data to be passed on stdin.
+  # @option options [Hash<String,String>] :env Additional environment variables for sub process
   #
   # @raise [NoSuchFileError] if the `command` is not found
   # @return [CommandResult] the output stream, error stream, and exit status
