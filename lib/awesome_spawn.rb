@@ -99,7 +99,7 @@ module AwesomeSpawn
     command_result = run(command, options)
 
     if command_result.failure?
-      message = "#{command} exit code: #{command_result.exit_status}"
+      message = CommandResultError.default_message(command, command_result.exit_status)
       logger.error("AwesomeSpawn: #{message}")
       logger.error("AwesomeSpawn: #{command_result.error}")
       raise CommandResultError.new(message, command_result)
