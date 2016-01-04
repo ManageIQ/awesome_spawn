@@ -14,4 +14,8 @@ describe AwesomeSpawn::CommandResultError do
     it { expect(subject.message).to eq("false exit code: 1") }
     it { expect(subject.result).to be_a_failure }
   end
+
+  it ".default_message" do
+    expect(described_class.default_message("some message", 123)).to eq "some message exit code: 123"
+  end
 end
