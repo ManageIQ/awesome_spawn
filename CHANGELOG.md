@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 - Added environment variable support with key `:env`
 - Single letter symbols become short parameters `{:a => 5}` becomes `-a 5`.
 - Introduce `AwesomeSpawn::SpecHelper` for `disable_spawning` in tests.
- 
+
 ## [v1.3.0] - 2015-01-28
 ### Added
 - This CHANGELOG file to help users track progress of this gem. More information can be found at http://keepachangelog.com/
