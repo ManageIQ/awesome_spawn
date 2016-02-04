@@ -83,7 +83,7 @@ module AwesomeSpawn
     KEY_REGEX = /^((?:--?)?)(.+?)(=?)$/
 
     def sanitize_key(key)
-      return key if key.nil? || key.empty?
+      return key if key.nil? || key.to_s.empty?
       key = convert_symbol_key(key) if key.kind_of?(Symbol)
 
       case key

@@ -34,6 +34,13 @@ describe AwesomeSpawn::CommandLineBuilder do
       expect(actual).to eq "/usr/bin/ruby -v"
     end
 
+    it "with Pathname in params" do
+      options = ["-d", Pathname.new("script.rb")]
+
+      actual = subject.build(Pathname.new("/usr/bin/ruby"), options)
+      expect(actual).to eq "/usr/bin/ruby -d script.rb"
+    end
+
     context "with Hash" do
       it "that is empty" do
         assert_params({}, "")
