@@ -8,6 +8,7 @@ module AwesomeSpawn
     attr_reader :result
 
     def initialize(message, result)
+      message += " error was: #{result.error}" if !result.nil? && !result.error.empty?
       super(message)
       @result = result
     end
