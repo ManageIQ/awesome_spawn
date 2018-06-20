@@ -67,9 +67,8 @@ module AwesomeSpawn
   # @raise [NoSuchFileError] if the `command` is not found
   # @return [CommandResult] the output stream, error stream, and exit status
   # @see http://ruby-doc.org/core/Kernel.html#method-i-spawn Kernel.spawn
-  def run(command, options = {})
-    bad_keys = (options.keys.flatten & [:in, :out, :err]).map { |k| ":#{k}" }
-    raise ArgumentError, "options cannot contain #{bad_keys.join(", ")}" if bad_keys.any?
+  def run(*opts)
+    command, options = normalize_run_opts(*opts)
     env, command_line, options = parse_command_options(command, options)
 
     if (in_data = options.delete(:in_data))
@@ -95,10 +94,11 @@ module AwesomeSpawn
   #
   # @raise [CommandResultError] if the exit status is not 0.
   # @return (see #run)
-  def run!(command, options = {})
-    command_result = run(command, options)
+  def run!(*opts)
+    command_result = run(*opts)
 
     if command_result.failure?
+      command = command_result.command_line
       message = CommandResultError.default_message(command, command_result.exit_status)
       logger.error("AwesomeSpawn: #{message}")
       logger.error("AwesomeSpawn: #{command_result.error}")
@@ -118,6 +118,19 @@ module AwesomeSpawn
   def launch(env, command, spawn_options)
     output, error, status = Open3.capture3(env, command, spawn_options)
     return output, error, status && status.exitstatus
+  end
+
+  def normalize_run_opts(*opts)
+    command, options = if opts.last.kind_of?(Hash)
+                         [opts[0..-2], opts.last]
+                       else
+                         [opts, {}]
+                       end
+
+    bad_keys = (options.keys.flatten & [:in, :out, :err]).map { |k| ":#{k}" }
+    raise ArgumentError, "options cannot contain #{bad_keys.join(", ")}" if bad_keys.any?
+
+    [command.first, options]
   end
 
   def parse_command_options(command, options)
