@@ -15,6 +15,51 @@ describe AwesomeSpawn do
       subject.send(run_method, "true", :params => {:user => "bob"}, :env => {"VAR" => "x"})
     end
 
+    it "supports pipes with :params" do
+      cmds = [
+        "true",
+        ["true", :params => { :arg1 => "one", :no_arg2 => nil }]
+      ]
+      expected_cmd = ["true", "true --arg1 one --no-arg2"]
+      allow(subject).to receive(:launch).with({}, expected_cmd, {}).and_return(["", "", 0])
+      subject.send(run_method, *cmds)
+    end
+
+    it "supports pipes with env" do
+      opts = { :env => { :FOO => "foo", :BAR => "bar" } }
+      cmds = [
+        "true",
+        ["true", :params => { :arg1 => "one", :no_arg2 => nil }]
+      ]
+
+      in_r,  in_w  = IO.pipe
+      out_r, out_w = IO.pipe
+      err_r, err_w = IO.pipe
+      expect(IO).to receive(:pipe).and_return([in_r, in_w], [out_r, out_w], [err_r, err_w])
+
+      expected_pipeline_run_args = [
+        [[opts[:env], "true"], [opts[:env], "true --arg1 one --no-arg2"]],
+        {:in => in_r, :out => out_w, :err => err_w},
+        [in_r, out_w, err_w],
+        [in_w, out_r, err_r]
+      ]
+      allow(Open3).to receive(:pipeline_run).with(*expected_pipeline_run_args).and_return(["", "", double(:exitstatus => 0)])
+
+      subject.send(run_method, *cmds, opts)
+    end
+
+    it "supports multi-level pipes with mixed args and single strings" do
+      cmds = [
+        "echo hello world",
+        "cat",
+        ["wc", { :params => { :c => nil} }],
+        ["tr", { :params => { :d => '" "'} }]
+      ]
+      expected_cmd = ['echo hello world', 'cat', 'wc -c', 'tr -d \\"\\ \\"']
+      allow(subject).to receive(:launch).with({}, expected_cmd, {}).and_return(["", "", 0])
+      subject.send(run_method, *cmds)
+    end
+
     it "wont modify passed in options" do
       options      = {:params => {:user => "bob"}}
       orig_options = options.dup
@@ -64,6 +109,32 @@ describe AwesomeSpawn do
 
     it "runs command" do
       expect(subject.send(run_method, "true")).to be_kind_of AwesomeSpawn::CommandResult
+    end
+
+    describe "with pipes" do
+      # expected_cmd = "true --arg1 one --no-arg2 | echo 'hello world'; echo 'err' 1>&2"
+      let(:cmds) do
+        [
+          ["true", :params => { :arg1 => "one", :no_arg2 => nil }],
+          "echo 'hello world'; echo 'err' 1>&2"
+        ]
+      end
+
+      before do
+        @result = described_class.send(run_method, *cmds)
+      end
+
+      it "it returns exit_status of the last cmd piped_to" do
+        expect(@result.exit_status).to eq(0)
+      end
+
+      it "it captures output" do
+        expect(@result.output).to eq("hello world\n")
+      end
+
+      it "it captures error" do
+        expect(@result.error).to eq("err\n")
+      end
     end
 
     it "detects bad commands" do
@@ -141,6 +212,158 @@ describe AwesomeSpawn do
       it "contains #error" do
         expect(subject.send(run_method, "echo 'bad' >&2 && false").error).to eq("bad\n")
       end
+    end
+
+    describe "with pipes" do
+      # expected_cmd = "true --arg1 one --no-arg2 | echo 'hello world'; echo 'err' 1>&2"
+      let(:cmds) do
+        [
+          ["true", :params => { :arg1 => "one", :no_arg2 => nil }],
+          "echo 'bye world'; echo 'err' 1>&2; false"
+        ]
+      end
+
+      before do
+        @result = described_class.send(run_method, cmds)
+      end
+
+      it "it returns exit_status of the last cmd piped_to" do
+        expect(@result.exit_status).to eq(1)
+      end
+
+      it "it captures output" do
+        expect(@result.output).to eq("bye world\n")
+      end
+
+      it "it captures error" do
+        expect(@result.error).to eq("err\n")
+      end
+    end
+  end
+
+  describe ".normalize_run_opts" do
+    shared_examples_for "cmd arg variations" do
+      let(:opts)             { (Array(@cmds.dup) << passed_options).compact }
+      let(:expected_options) { passed_options || {} }
+
+      # normalize_run_opts("true", [OPTIONS])
+      # #=> ["true"], {}
+      it "returns an array + hash with a single string command" do
+        @cmds = "true"
+        commands, options = subject.send(:normalize_run_opts, *opts)
+        expect(commands).to eq(["true"])
+        expect(options).to  eq(expected_options)
+      end
+
+      # normalize_run_opts(["true"], [OPTIONS])
+      # #=> ["true"], {}
+      it "returns an array + hash with a single string array command" do
+        @cmds = %w(true)
+        commands, options = if passed_options
+                              subject.send(:normalize_run_opts, @cmds, passed_options)
+                            else
+                              subject.send(:normalize_run_opts, @cmds)
+                            end
+        expect(commands).to eq(["true"])
+        expect(options).to  eq(expected_options)
+      end
+
+      # normalize_run_opts("true", "false", "true", [OPTIONS])
+      # #=> ["true", "false", "true"], {}
+      it "returns array + hash with splat array of string commands" do
+        @cmds = %w(true false true)
+        commands, options = subject.send(:normalize_run_opts, *opts)
+        expect(commands).to eq(%w(true false true))
+        expect(options).to  eq(expected_options)
+      end
+
+      # normalize_run_opts(["true", "false", "true"], [OPTIONS])
+      # #=> ["true", "false", "true"], {}
+      it "returns array + hash with single arg array of string commands" do
+        @cmds = %w(true false true)
+        commands, options = if passed_options
+                              subject.send(:normalize_run_opts, @cmds, passed_options)
+                            else
+                              subject.send(:normalize_run_opts, @cmds)
+                            end
+        expect(commands).to eq(%w(true false true))
+        expect(options).to  eq(expected_options)
+      end
+
+      # (technically valid, but stupid case)
+      #
+      # normalize_run_opts([["true", { :params => {} }]], {})
+      # #=> [["true", { :params => {} }]], {}
+      it "returns array + hash with a string plus params hash" do
+        @cmds = [["true", { :params => { :a => nil } }]]
+        commands, options = if passed_options
+                              subject.send(:normalize_run_opts, @cmds, passed_options)
+                            else
+                              subject.send(:normalize_run_opts, @cmds)
+                            end
+        expect(commands).to eq([["true", { :params => { :a => nil } }]])
+        expect(options).to  eq(expected_options)
+      end
+
+      # normalize_run_opts("false", ["true", {:params => {:a => nil}], "false", [OPTIONS])
+      # #=> ["false", ["true", {:params => {:a => nil}], "false"], {}
+      it "returns array + hash with a splat array mixed with single strings and tuples" do
+        @cmds = ["false", ["true", { :params => { :a => nil } }], "false"]
+        commands, options = subject.send(:normalize_run_opts, *opts)
+        expect(commands).to eq(["false", ["true", { :params => { :a => nil } }], "false"])
+        expect(options).to  eq(expected_options)
+      end
+
+      # normalize_run_opts(["false", ["true", {:params => {:a => nil}], "false"], [OPTIONS])
+      # #=> ["false", ["true", {:params => {:a => nil}], "false"], {}
+      it "returns array + hash with a splat array mixed with single strings and tuples" do
+        @cmds = ["false", ["true", { :params => { :a => nil } }], "false"]
+        commands, options = if passed_options
+                              subject.send(:normalize_run_opts, @cmds, passed_options)
+                            else
+                              subject.send(:normalize_run_opts, @cmds)
+                            end
+        expect(commands).to eq(["false", ["true", { :params => { :a => nil } }], "false"])
+        expect(options).to  eq(expected_options)
+      end
+
+      # normalize_run_opts([["false", { :params => { :a => nil } }], ["true", { :params => [:b, nil] }]], [OPTIONS])
+      # #=> [["false", { :params => { :a => nil } }], ["true", { :params => [:b, nil] }]], {}
+      it "returns array + hash with a single array of many cmd+params commands" do
+        @cmds = [["false", { :params => { :a => nil } }], ["true", { :params => [:b, nil] }]]
+        commands, options = if passed_options
+                              subject.send(:normalize_run_opts, @cmds, passed_options)
+                            else
+                              subject.send(:normalize_run_opts, @cmds)
+                            end
+        expect(commands).to eq(@cmds)
+        expect(options).to  eq(expected_options)
+      end
+
+      # normalize_run_opts(["false", { :params => { :a => nil } }], ["true", { :params => [:b, nil] }], [OPTIONS])
+      # #=> [["false", { :params => { :a => nil } }], ["true", { :params => [:b, nil] }]], {}
+      it "returns array + hash with a splat array of many cmd+params commands" do
+        @cmds = [["false", { :params => { :a => nil } }], ["true", { :params => [:b, nil] }]]
+        commands, options = if passed_options
+                              subject.send(:normalize_run_opts, *[@cmds, passed_options])
+                            else
+                              subject.send(:normalize_run_opts, *@cmds)
+                            end
+        expect(commands).to eq(@cmds)
+        expect(options).to  eq(expected_options)
+      end
+    end
+
+    context "with options" do
+      let(:passed_options) { { :env => {}, :params => {} } }
+
+      include_examples "cmd arg variations"
+    end
+
+    context "without options" do
+      let(:passed_options) { nil }
+
+      include_examples "cmd arg variations"
     end
   end
 
