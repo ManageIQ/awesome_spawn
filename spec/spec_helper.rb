@@ -5,6 +5,14 @@
 #
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 
+if ENV["CI"]
+  require 'simplecov'
+  SimpleCov.start
+
+  require 'codecov'
+  SimpleCov.formatter = SimpleCov::Formatter::Codecov
+end
+
 require 'awesome_spawn/spec_helper'
 
 RSpec.configure do |config|
