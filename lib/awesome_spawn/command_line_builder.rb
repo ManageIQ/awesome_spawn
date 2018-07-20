@@ -12,7 +12,7 @@ module AwesomeSpawn
     #
     #   - `{:k => "value"}`              generates `-k value`
     #   - `[[:k, "value"]]`              generates `-k value`
-    #   - `{:k => "value"}`              generates `-k=value`
+    #   - `{:k= => "value"}`             generates `-k=value`
     #   - `[[:k=, "value"]]`             generates `-k=value` <br /><br />
     #
     #   - `{:key => "value"}`            generates `--key value`
