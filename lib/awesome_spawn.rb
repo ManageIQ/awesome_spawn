@@ -100,8 +100,10 @@ module AwesomeSpawn
 
     if command_result.failure?
       message = CommandResultError.default_message(command, command_result.exit_status)
+      error = command_result.error.nil? || command_result.error.empty? ? command_result.output : command_result.error
+
       logger.error("AwesomeSpawn: #{message}")
-      logger.error("AwesomeSpawn: #{command_result.error}")
+      logger.error("AwesomeSpawn: #{error}")
       raise CommandResultError.new(message, command_result)
     end
 
