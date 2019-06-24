@@ -11,11 +11,11 @@ module AwesomeSpawn
       allow(Open3).to receive(:capture3).and_call_original
     end
 
-    def stub_good_run
+    def stub_good_run(command, options = {})
       stub_run(:good, :run, command, options)
     end
 
-    def stub_bad_run
+    def stub_bad_run(command, options = {})
       stub_run(:bad, :run, command, options)
     end
 
@@ -30,15 +30,14 @@ module AwesomeSpawn
     private
 
     def stub_run(mode, method, command, options)
-      output = options[:output] || ""
-      error  = options[:error]  || (mode == :bad ? "Failure" : "")
-      exit_status = options[:exit_status] || (mode == :bad ? 1 : 0)
+      options = options.dup
+      output = options.delete(:output) || ""
+      error  = options.delete(:error)  || (mode == :bad ? "Failure" : "")
+      exit_status = options.delete(:exit_status) || (mode == :bad ? 1 : 0)
 
-      params = options[:params]
-      command_line = AwesomeSpawn.build_command_line(command, params)
+      command_line = AwesomeSpawn.build_command_line(command, options[:params])
 
-      args = [command]
-      args << {:params => params} if params
+      args = [command, options]
 
       result = CommandResult.new(command_line, output, error, exit_status)
       if method == :run! && mode == :bad
