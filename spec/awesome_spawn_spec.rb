@@ -141,6 +141,20 @@ describe AwesomeSpawn do
       it "contains #error" do
         expect(subject.send(run_method, "echo 'bad' >&2 && false").error).to eq("bad\n")
       end
+
+      it "combines output when using :combined_output => true" do
+        result = subject.send(run_method, "echo good && echo 'bad' >&2 && false", :combined_output => true)
+
+        expect(result.output).to eq("good\nbad\n")
+        expect(result.error).to  eq("")
+      end
+
+      it "allows :combined_output to be falsey" do
+        result = subject.send(run_method, "echo good && echo 'bad' >&2 && false", :combined_output => false)
+
+        expect(result.output).to eq("good\n")
+        expect(result.error).to  eq("bad\n")
+      end
     end
   end
 
