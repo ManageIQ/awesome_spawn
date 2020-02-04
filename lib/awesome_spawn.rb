@@ -62,6 +62,7 @@ module AwesomeSpawn
   # @option options [Hash,Array] :params The command line parameters. See
   #   {#build_command_line} for how to specify params.
   # @option options [String] :in_data Data to be passed on stdin.
+  # @option options [Boolean] :combined_output Combine STDOUT/STDERR streams from run command
   # @option options [Hash<String,String>] :env Additional environment variables for sub process
   #
   # @raise [NoSuchFileError] if the `command` is not found
@@ -118,7 +119,13 @@ module AwesomeSpawn
   private
 
   def launch(env, command, spawn_options)
-    output, error, status = Open3.capture3(env, command, spawn_options)
+    capture2e = spawn_options.delete(:combined_output)
+    if capture2e
+      output, status = Open3.capture2e(env, command, spawn_options)
+      error          = ""
+    else
+      output, error, status = Open3.capture3(env, command, spawn_options)
+    end
     return output, error, status && status.exitstatus
   end
 

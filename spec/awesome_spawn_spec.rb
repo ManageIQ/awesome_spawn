@@ -31,25 +31,25 @@ describe AwesomeSpawn do
       expect(orig_params).to eq(params)
     end
 
-    it "warns about option :in" do
+    it "errors on option :in" do
       expect do
         subject.send(run_method, "true", :in => "/dev/null")
       end.to raise_error(ArgumentError, "options cannot contain :in")
     end
 
-    it "warns about option :out" do
+    it "errors on option :out" do
       expect do
         subject.send(run_method, "true", :out => "/dev/null")
       end.to raise_error(ArgumentError, "options cannot contain :out")
     end
 
-    it "warns about option :err" do
+    it "errors on option :err" do
       expect do
         subject.send(run_method, "true", :err => "/dev/null")
       end.to raise_error(ArgumentError, "options cannot contain :err")
     end
 
-    it "warns about option :err when in an array" do
+    it "errors on option :err when in an array" do
       expect do
         subject.send(run_method, "true", [:err, :out, 3] => "/dev/null")
       end.to raise_error(ArgumentError, "options cannot contain :err, :out")
@@ -140,6 +140,20 @@ describe AwesomeSpawn do
 
       it "contains #error" do
         expect(subject.send(run_method, "echo 'bad' >&2 && false").error).to eq("bad\n")
+      end
+
+      it "combines output when using :combined_output => true" do
+        result = subject.send(run_method, "echo good && echo 'bad' >&2 && false", :combined_output => true)
+
+        expect(result.output).to eq("good\nbad\n")
+        expect(result.error).to  eq("")
+      end
+
+      it "allows :combined_output to be falsey" do
+        result = subject.send(run_method, "echo good && echo 'bad' >&2 && false", :combined_output => false)
+
+        expect(result.output).to eq("good\n")
+        expect(result.error).to  eq("bad\n")
       end
     end
   end
