@@ -33,13 +33,14 @@ module AwesomeSpawn
       options = options.dup
       output = options.delete(:output) || ""
       error  = options.delete(:error)  || (mode == :bad ? "Failure" : "")
+      pid    = options.delete(:pid)    || ""
       exit_status = options.delete(:exit_status) || (mode == :bad ? 1 : 0)
 
       command_line = AwesomeSpawn.build_command_line(command, options[:params])
 
       args = [command, options]
 
-      result = CommandResult.new(command_line, output, error, exit_status)
+      result = CommandResult.new(command_line, output, error, pid, exit_status)
       if method == :run! && mode == :bad
         error_message = CommandResultError.default_message(command, exit_status)
         error = CommandResultError.new(error_message, result)

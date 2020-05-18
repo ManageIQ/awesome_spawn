@@ -17,7 +17,7 @@ module AwesomeSpawn
   end
 
   # Execute `command` synchronously via Kernel.spawn and gather the output
-  #   stream, error stream, and exit status in a {CommandResult}.
+  #   stream, error stream, pid, and exit status in a {CommandResult}.
   #
   # @example With normal output
   #   result = AwesomeSpawn.run('echo Hi')
@@ -77,12 +77,15 @@ module AwesomeSpawn
       options[:stdin_data] = in_data
     end
 
-    output, error, status = launch(env, command_line, options)
+    output, error, process_status = launch(env, command_line, options)
+    status = process_status && process_status.exitstatus
+    pid = process_status.pid if process_status
+
   rescue Errno::ENOENT => err
     raise NoSuchFileError.new(err.message) if NoSuchFileError.detected?(err.message)
     raise
   else
-    CommandResult.new(command_line, output, error, status)
+    CommandResult.new(command_line, output, error, pid, status)
   end
 
   # Same as {#run}, additionally raising a {CommandResultError} if the exit
@@ -126,7 +129,7 @@ module AwesomeSpawn
     else
       output, error, status = Open3.capture3(env, command, spawn_options)
     end
-    return output, error, status && status.exitstatus
+    return output, error, status
   end
 
   def parse_command_options(command, options)

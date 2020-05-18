@@ -3,30 +3,35 @@ require 'pathname' # For Pathname specific specs
 
 describe AwesomeSpawn do
   subject { described_class }
+  let(:status) { double("status") }
 
   shared_examples_for "parses" do
+    before do
+      allow(status).to receive_messages(:exitstatus => 0, :pid => 3)
+    end
+
     it "supports no options" do
-      allow(subject).to receive(:launch).with({}, "true", {}).and_return(["", "", 0])
+      allow(subject).to receive(:launch).with({}, "true", {}).and_return(["", "", status])
       subject.send(run_method, "true")
     end
 
     it "supports option :params and :env" do
-      allow(subject).to receive(:launch).with({"VAR" => "x"}, "true --user bob", {}).and_return(["", "", 0])
+      allow(subject).to receive(:launch).with({"VAR" => "x"}, "true --user bob", {}).and_return(["", "", status])
       subject.send(run_method, "true", :params => {:user => "bob"}, :env => {"VAR" => "x"})
     end
 
-    it "wont modify passed in options" do
+    it "won't modify passed in options" do
       options      = {:params => {:user => "bob"}}
       orig_options = options.dup
-      allow(subject).to receive(:launch).with({}, "true --user bob", {}).and_return(["", "", 0])
+      allow(subject).to receive(:launch).with({}, "true --user bob", {}).and_return(["", "", status])
       subject.send(run_method, "true", options)
       expect(orig_options).to eq(options)
     end
 
-    it "wont modify passed in options[:params]" do
+    it "won't modify passed in options[:params]" do
       params      = {:user => "bob"}
       orig_params = params.dup
-      allow(subject).to receive(:launch).with({}, "true --user bob", {}).and_return(["", "", 0])
+      allow(subject).to receive(:launch).with({}, "true --user bob", {}).and_return(["", "", status])
       subject.send(run_method, "true", :params => params)
       expect(orig_params).to eq(params)
     end

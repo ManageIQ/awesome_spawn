@@ -1,11 +1,12 @@
 module AwesomeSpawn
   class CommandResult
-    attr_reader :command_line, :output, :error, :exit_status
+    attr_reader :command_line, :output, :error, :pid, :exit_status
 
-    def initialize(command_line, output, error, exit_status)
+    def initialize(command_line, output, error, pid, exit_status)
       @command_line = command_line
       @output       = output
       @error        = error
+      @pid          = pid
       @exit_status  = exit_status
     end
 
