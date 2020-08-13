@@ -63,9 +63,7 @@ module AwesomeSpawn
     end
 
     def sanitize_associative_array(assoc_array)
-      assoc_array.each.with_object([]) do |item, array|
-        array.concat(sanitize_item(item))
-      end
+      assoc_array.flat_map { |item| sanitize_item(item) }
     end
 
     def sanitize_item(item)
