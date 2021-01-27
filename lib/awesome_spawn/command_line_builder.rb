@@ -58,7 +58,8 @@ module AwesomeSpawn
     end
 
     def sanitize(params)
-      return [] if params.nil? || params.empty?
+      return [] if params.blank?
+
       sanitize_associative_array(params)
     end
 
