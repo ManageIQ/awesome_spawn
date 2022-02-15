@@ -1,7 +1,7 @@
 # AwesomeSpawn
 
 [![Gem Version](https://badge.fury.io/rb/awesome_spawn.png)](http://badge.fury.io/rb/awesome_spawn)
-[![Build Status](https://travis-ci.org/ManageIQ/awesome_spawn.png)](https://travis-ci.org/ManageIQ/awesome_spawn)
+[![CI](https://github.com/ManageIQ/awesome_spawn/actions/workflows/ci.yaml/badge.svg)](https://github.com/ManageIQ/awesome_spawn/actions/workflows/ci.yaml)
 [![Code Climate](https://codeclimate.com/github/ManageIQ/awesome_spawn.png)](https://codeclimate.com/github/ManageIQ/awesome_spawn)
 [![Coverage Status](https://coveralls.io/repos/ManageIQ/awesome_spawn/badge.png?branch=master)](https://coveralls.io/r/ManageIQ/awesome_spawn)
 
