@@ -90,10 +90,46 @@ describe AwesomeSpawn do
         expect(result.output).to      eq("line1\nline2")
       end
 
-      it "sets environment" do
-        result = subject.send(run_method, "echo ${ABC}", :env => {"ABC" => "yay!"})
+      it "handles numeric parameters" do
+        result = subject.send(run_method, "echo ${ABC}", :params => [5], :env => {"ABC" => "yay!"})
         expect(result.exit_status).to eq(0)
-        expect(result.output).to      eq("yay!\n")
+        expect(result.output).to      eq("yay! 5\n")
+      end
+
+      it "handles numeric env variables" do
+        result = subject.send(run_method, "echo v=${ABC}", :env => {"ABC" => 5})
+        expect(result.exit_status).to eq(0)
+        expect(result.output).to      eq("v=5\n")
+      end
+
+      it "handles blank env variables (not checking presence)" do
+        result = subject.send(run_method, "echo v=\"'${ABC-none}'\"", :env => {"ABC" => ""})
+        expect(result.exit_status).to eq(0)
+        expect(result.output).to      eq("v=''\n")
+      end
+
+      it "handles blank env variables (checking presence)" do
+        result = subject.send(run_method, "echo v=\"'${ABC:-none}'\"", :env => {"ABC" => ""})
+        expect(result.exit_status).to eq(0)
+        expect(result.output).to      eq("v='none'\n")
+      end
+
+      it "handles nil env variables (not checking presence)" do
+        result = subject.send(run_method, "echo v=\"'${ABC-none}'\"", :env => {"ABC" => nil})
+        expect(result.exit_status).to eq(0)
+        expect(result.output).to      eq("v='none'\n")
+      end
+
+      it "handles nil env variables (checking presence)" do
+        result = subject.send(run_method, "echo v=\"'${ABC:-none}'\"", :env => {"ABC" => nil})
+        expect(result.exit_status).to eq(0)
+        expect(result.output).to      eq("v='none'\n")
+      end
+
+      it "handles symbolic env keys and values" do
+        result = subject.send(run_method, "echo ${ABC}", :env => {:ABC => :yay})
+        expect(result.exit_status).to eq(0)
+        expect(result.output).to      eq("yay\n")
       end
     end
 

@@ -164,7 +164,7 @@ module AwesomeSpawn
   def parse_command_options(command, options)
     options = options.dup
     params  = options.delete(:params)
-    env = options.delete(:env) || {}
+    env = (options.delete(:env) || {}).map { |n, v| [n.to_s, v&.to_s] }.to_h
 
     [env, build_command_line(command, params), options]
   end
