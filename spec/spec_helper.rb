@@ -6,8 +6,7 @@ end
 require 'awesome_spawn/spec_helper'
 
 RSpec.configure do |config|
-  include AwesomeSpawn::SpecHelper
-  config.before { disable_spawning }
+  AwesomeSpawn::SpecHelper.disable_spawning(config)
 end
 
 require 'awesome_spawn'
