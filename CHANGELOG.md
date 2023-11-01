@@ -3,6 +3,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v1.5.0] - 2020-02-04
+### Added
+- Add `:combined_output` option to merge STDOUT and STDERR streams [[#48](https://github.com/ManageIQ/awesome_spawn/pull/48)]
+- Publish STDERR when error occurs on command execution [[#39](https://github.com/ManageIQ/awesome_spawn/pull/39)]
+- On error log STDOUT if STDERR is empty [[#45](https://github.com/ManageIQ/awesome_spawn/pull/45)]
+- Add support for Ruby 2.3 and 2.4 [[#40](https://github.com/ManageIQ/awesome_spawn/pull/40)]
+
+### Fixed
+- Make `AwesomeSpawn::SpecHelper` work properly [[#46](https://github.com/ManageIQ/awesome_spawn/pull/46)]
+- Don't include spec in gem [[#47](https://github.com/ManageIQ/awesome_spawn/pull/47)]
+
+### Removed
+- Remove support for Ruby 1.9 [[#38](https://github.com/ManageIQ/awesome_spawn/pull/38)]
+
 ## [v1.4.0] - 2016-01-28
 - Added environment variable support with key `:env`
 - Single letter symbols become short parameters `{:a => 5}` becomes `-a 5`.
@@ -31,6 +45,7 @@ All notable changes to this project will be documented in this file.
 ## v1.0.0 - 2014-01-04
 
 [Unreleased]: https://github.com/ManageIQ/awesome_spawn/compare/v1.4.0...HEAD
+[v1.5.0]: https://github.com/ManageIQ/awesome_spawn/compare/v1.4.0...v1.5.0
 [v1.4.0]: https://github.com/ManageIQ/awesome_spawn/compare/v1.3.0...v1.4.0
 [v1.3.0]: https://github.com/ManageIQ/awesome_spawn/compare/v1.2.1...v1.3.0
 [v1.2.1]: https://github.com/ManageIQ/awesome_spawn/compare/v1.2.0...v1.2.1
