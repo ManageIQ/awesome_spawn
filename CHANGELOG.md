@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v1.6.0] - 2023-11-01
+### Added
+- Add `CommandResult#pid` [[#49](https://github.com/ManageIQ/awesome_spawn/pull/49)]
+- Add `AwesomeSpawn.run_detached` [[#52](https://github.com/ManageIQ/awesome_spawn/pull/52)]
+- Add `SpecHelper.disable_spawning` helper method [[#66](https://github.com/ManageIQ/awesome_spawn/pull/66)]
+- Add support for Ruby versions 2.5 to 3.2 [[#56](https://github.com/ManageIQ/awesome_spawn/pull/56), [#62](https://github.com/ManageIQ/awesome_spawn/pull/62), [#70](https://github.com/ManageIQ/awesome_spawn/pull/70)]
+
+### Removed
+- Remove support for old Ruby versions 2.0 to 2.4 [[#56](https://github.com/ManageIQ/awesome_spawn/pull/56)]
+
 ## [v1.5.0] - 2020-02-04
 ### Added
 - Add `:combined_output` option to merge STDOUT and STDERR streams [[#48](https://github.com/ManageIQ/awesome_spawn/pull/48)]
@@ -44,7 +54,8 @@ All notable changes to this project will be documented in this file.
 
 ## v1.0.0 - 2014-01-04
 
-[Unreleased]: https://github.com/ManageIQ/awesome_spawn/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/ManageIQ/awesome_spawn/compare/v1.6.0...HEAD
+[v1.6.0]: https://github.com/ManageIQ/awesome_spawn/compare/v1.5.0...v1.6.0
 [v1.5.0]: https://github.com/ManageIQ/awesome_spawn/compare/v1.4.0...v1.5.0
 [v1.4.0]: https://github.com/ManageIQ/awesome_spawn/compare/v1.3.0...v1.4.0
 [v1.3.0]: https://github.com/ManageIQ/awesome_spawn/compare/v1.2.1...v1.3.0
