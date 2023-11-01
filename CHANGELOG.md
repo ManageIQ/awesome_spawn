@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 ## [v1.6.0] - 2023-11-01
 ### Added
 - Add `CommandResult#pid` [[#49](https://github.com/ManageIQ/awesome_spawn/pull/49)]
-- Add `AwesomeSpawn.run_detached` [[#52](https://github.com/ManageIQ/awesome_spawn/pull/52)]
+- Add `AwesomeSpawn.run_detached` [[#32](https://github.com/ManageIQ/awesome_spawn/pull/32)]
 - Add `SpecHelper.disable_spawning` helper method [[#66](https://github.com/ManageIQ/awesome_spawn/pull/66)]
 - Add support for Ruby versions 2.5 to 3.2 [[#56](https://github.com/ManageIQ/awesome_spawn/pull/56), [#62](https://github.com/ManageIQ/awesome_spawn/pull/62), [#70](https://github.com/ManageIQ/awesome_spawn/pull/70)]
 
