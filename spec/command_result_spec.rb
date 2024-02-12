@@ -14,9 +14,9 @@ describe AwesomeSpawn::CommandResult do
     end
 
     it "should not display sensitive information" do
-      expect(subject.inspect).to_not include("aaa")
-      expect(subject.inspect).to_not include("bbb")
-      expect(subject.inspect).to_not include("ccc")
+      expect(subject.inspect).to_not match(/^#<AwesomeSpawn::CommandResult:[0-9a-fx]+ .*aaa.*/)
+      expect(subject.inspect).to_not match(/^#<AwesomeSpawn::CommandResult:[0-9a-fx]+ .*bbb.*/)
+      expect(subject.inspect).to_not match(/^#<AwesomeSpawn::CommandResult:[0-9a-fx]+ .*ccc.*/)
     end
 
     it { expect(subject).to be_a_success }
