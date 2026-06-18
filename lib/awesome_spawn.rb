@@ -71,13 +71,14 @@ module AwesomeSpawn
   def run(command, options = {})
     bad_keys = (options.keys.flatten & [:in, :out, :err]).map { |k| ":#{k}" }
     raise ArgumentError, "options cannot contain #{bad_keys.join(", ")}" if bad_keys.any?
-    env, command_line, options = parse_command_options(command, options)
+    env, cmd, args, options = parse_command_options(command, options)
 
     if (in_data = options.delete(:in_data))
       options[:stdin_data] = in_data
     end
 
-    output, error, process_status = launch(env, command_line, options)
+    command_line = args.empty? ? cmd : "#{cmd} #{args.join(' ')}"
+    output, error, process_status = launch(env, cmd, args, options)
     status = process_status && process_status.exitstatus
     pid = process_status.pid if process_status
 
@@ -129,7 +130,7 @@ module AwesomeSpawn
   #
   # if a user defines :out or :err, it is assumed they will define both
   def run_detached(command, options = {})
-    env, command_line, options = parse_command_options(command, options)
+    env, cmd, args, options = parse_command_options(command, options)
     # maybe add support later for this
     raise ArgumentError, "options cannot contain :in_data" if options.include?(:in_data)
 
@@ -140,24 +141,36 @@ module AwesomeSpawn
       options[:pgroup]      = true unless options.key?(:pgroup)
     end
 
-    detach(env, command_line, options)
+    detach(env, cmd, args, options)
   end
 
   # (see CommandLineBuilder#build)
   def build_command_line(command, params = nil)
-    CommandLineBuilder.new.build(command, params)
+    cmd, args = CommandLineBuilder.new.build(command, params)
+    args.empty? ? cmd : "#{cmd} #{args.join(' ')}"
   end
 
   private
 
-  def launch(env, command, spawn_options)
+  def launch(env, command, args, spawn_options)
     capture2e = spawn_options.delete(:combined_output)
-    if capture2e
-      output, status = Open3.capture2e(env, command, spawn_options)
+
+    # If command contains shell metacharacters, use shell interpretation
+    if command.match?(/[${}`|&;<>()]/)
+      full_command = args.empty? ? command : "#{command} #{args.join(' ')}"
+      if capture2e
+        output, status = Open3.capture2e(env, full_command, spawn_options)
+        error          = ""
+      else
+        output, error, status = Open3.capture3(env, full_command, spawn_options)
+      end
+    elsif capture2e
+      output, status = Open3.capture2e(env, command, *args, spawn_options)
       error          = ""
     else
-      output, error, status = Open3.capture3(env, command, spawn_options)
+      output, error, status = Open3.capture3(env, command, *args, spawn_options)
     end
+
     return output, error, status
   end
 
@@ -165,11 +178,12 @@ module AwesomeSpawn
     options = options.dup
     params  = options.delete(:params)
     env = (options.delete(:env) || {}).map { |n, v| [n.to_s, v&.to_s] }.to_h
+    cmd, args = CommandLineBuilder.new.build(command, params)
 
-    [env, build_command_line(command, params), options]
+    [env, cmd, args, options]
   end
 
-  def detach(env, command, options)
-    Process.detach(Kernel.spawn(env, command, options)).pid
+  def detach(env, command, args, options)
+    Process.detach(Kernel.spawn(env, command, *args, options)).pid
   end
 end

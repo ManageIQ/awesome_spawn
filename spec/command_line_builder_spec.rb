@@ -4,253 +4,266 @@ describe AwesomeSpawn::CommandLineBuilder do
   subject { described_class.new }
 
   context "#build" do
-    def assert_params(params, expected_params)
-      expect(subject.build("true", params)).to eq "true #{expected_params}".strip
+    def assert_params(params, expected_args)
+      cmd, args = subject.build("true", params)
+      expect(cmd).to eq "true"
+      expect(args).to eq expected_args
     end
 
     it "without params" do
-      expect(subject.build("true")).to eq "true"
+      cmd, args = subject.build("true")
+      expect(cmd).to eq "true"
+      expect(args).to eq []
     end
 
     it "with nil" do
-      expect(subject.build("true", nil)).to eq "true"
+      cmd, args = subject.build("true", nil)
+      expect(cmd).to eq "true"
+      expect(args).to eq []
     end
 
     it "with empty" do
-      expect(subject.build("true", "")).to eq "true"
+      cmd, args = subject.build("true", "")
+      expect(cmd).to eq "true"
+      expect(args).to eq []
     end
 
     it "with empty" do
-      expect(subject.build("true", [])).to eq "true"
+      cmd, args = subject.build("true", [])
+      expect(cmd).to eq "true"
+      expect(args).to eq []
     end
 
     it "with Pathname command" do
-      actual = subject.build(Pathname.new("/usr/bin/ruby"))
-      expect(actual).to eq "/usr/bin/ruby"
+      cmd, args = subject.build(Pathname.new("/usr/bin/ruby"))
+      expect(cmd).to eq "/usr/bin/ruby"
+      expect(args).to eq []
     end
 
     it "with Pathname command and params" do
-      actual = subject.build(Pathname.new("/usr/bin/ruby"), "-v" => nil)
-      expect(actual).to eq "/usr/bin/ruby -v"
+      cmd, args = subject.build(Pathname.new("/usr/bin/ruby"), "-v" => nil)
+      expect(cmd).to eq "/usr/bin/ruby"
+      expect(args).to eq ["-v"]
     end
 
     it "with Pathname in params" do
       options = ["-d", Pathname.new("script.rb")]
 
-      actual = subject.build(Pathname.new("/usr/bin/ruby"), options)
-      expect(actual).to eq "/usr/bin/ruby -d script.rb"
+      cmd, args = subject.build(Pathname.new("/usr/bin/ruby"), options)
+      expect(cmd).to eq "/usr/bin/ruby"
+      expect(args).to eq ["-d", "script.rb"]
     end
 
     context "with Hash" do
       it "that is empty" do
-        assert_params({}, "")
+        assert_params({}, [])
       end
 
       it "with normal params" do
-        assert_params({"--user" => "bob"}, "--user bob")
+        assert_params({"--user" => "bob"}, ["--user", "bob"])
       end
 
       it "with key with tailing '='" do
-        assert_params({"--user=" => "bob"}, "--user=bob")
+        assert_params({"--user=" => "bob"}, ["--user=bob"])
       end
 
       it "with single letter symbol" do
-        assert_params({:a => "val"}, "-a val")
+        assert_params({:a => "val"}, ["-a", "val"])
       end
 
       it "with single letter symbol" do
-        assert_params({:a= => "val"}, "-a=val")
+        assert_params({:a= => "val"}, ["-a=val"])
       end
 
       it "with value requiring sanitization" do
-        assert_params({"--pass" => "P@$s w0rd%"}, "--pass P@\\$s\\ w0rd\\%")
+        assert_params({"--pass" => "P@$s w0rd%"}, ["--pass", "P@$s w0rd%"])
       end
 
       it "with key requiring sanitization" do
-        assert_params({"--h&x0r=" => "xxx"}, "--h\\&x0r=xxx")
+        assert_params({"--h&x0r=" => "xxx"}, ["--h&x0r=xxx"])
       end
 
       it "with key as Symbol" do
-        assert_params({:abc => "def"}, "--abc def")
+        assert_params({:abc => "def"}, ["--abc", "def"])
       end
 
       it "with key as Symbol with tailing '='" do
-        assert_params({:abc= => "def"}, "--abc=def")
+        assert_params({:abc= => "def"}, ["--abc=def"])
       end
 
       it "with key as Symbol with underscore" do
-        assert_params({:abc_def => "ghi"}, "--abc-def ghi")
+        assert_params({:abc_def => "ghi"}, ["--abc-def", "ghi"])
       end
 
       it "with key as Symbol with underscore and tailing '='" do
-        assert_params({:abc_def= => "ghi"}, "--abc-def=ghi")
+        assert_params({:abc_def= => "ghi"}, ["--abc-def=ghi"])
       end
 
       it "with key as nil" do
-        assert_params({nil => "def"}, "def")
+        assert_params({nil => "def"}, ["def"])
       end
 
       it "with value as nil" do
-        assert_params({"--abc" => nil}, "--abc")
+        assert_params({"--abc" => nil}, ["--abc"])
       end
 
       it "with key and value nil" do
-        assert_params({nil => nil}, "")
+        assert_params({nil => nil}, [])
       end
 
       it "with key of '--'" do
-        assert_params({"--" => nil}, "--")
+        assert_params({"--" => nil}, ["--"])
       end
 
       it "with value as Symbol" do
-        assert_params({"--abc" => :def}, "--abc def")
+        assert_params({"--abc" => :def}, ["--abc", "def"])
       end
 
       it "with value as Array" do
-        assert_params({"--abc" => ["def", "ghi"]}, "--abc def ghi")
+        assert_params({"--abc" => ["def", "ghi"]}, ["--abc", "def", "ghi"])
       end
 
       it "with value as Fixnum" do
-        assert_params({"--abc" => 1}, "--abc 1")
+        assert_params({"--abc" => 1}, ["--abc", "1"])
       end
 
       it "with value as Fixnum Array" do
-        assert_params({"--abc" => [1, 2]}, "--abc 1 2")
+        assert_params({"--abc" => [1, 2]}, ["--abc", "1", "2"])
       end
 
       it "with value as Range" do
-        assert_params({"--abc" => (1..4)}, "--abc 1 2 3 4")
+        assert_params({"--abc" => (1..4)}, ["--abc", "1", "2", "3", "4"])
       end
 
       it "with value as Pathname" do
-        assert_params({"--abc" => Pathname.new("/usr/bin/ruby")}, "--abc /usr/bin/ruby")
+        assert_params({"--abc" => Pathname.new("/usr/bin/ruby")}, ["--abc", "/usr/bin/ruby"])
       end
     end
 
     context "with associative Array" do
       it "that is empty" do
-        assert_params([], "")
+        assert_params([], [])
       end
 
       it "that is nested empty" do
-        assert_params([[]], "")
+        assert_params([[]], [])
       end
 
       it "with normal params" do
-        assert_params([["--user", "bob"]], "--user bob")
+        assert_params([["--user", "bob"]], ["--user", "bob"])
       end
 
       it "with key with tailing '='" do
-        assert_params([["--user=", "bob"]], "--user=bob")
+        assert_params([["--user=", "bob"]], ["--user=bob"])
       end
 
       it "with value requiring sanitization" do
-        assert_params([["--pass", "P@$s w0rd%"]], "--pass P@\\$s\\ w0rd\\%")
+        assert_params([["--pass", "P@$s w0rd%"]], ["--pass", "P@$s w0rd%"])
       end
 
       it "with key requiring sanitization" do
-        assert_params([["--h&x0r=", "xxx"]], "--h\\&x0r=xxx")
+        assert_params([["--h&x0r=", "xxx"]], ["--h&x0r=xxx"])
       end
 
       it "with key as Symbol" do
-        assert_params([[:abc, "def"]], "--abc def")
+        assert_params([[:abc, "def"]], ["--abc", "def"])
       end
 
       it "with key as Symbol with tailing '='" do
-        assert_params([[:abc=, "def"]], "--abc=def")
+        assert_params([[:abc=, "def"]], ["--abc=def"])
       end
 
       it "with key as Symbol with underscore" do
-        assert_params([[:abc_def, "ghi"]], "--abc-def ghi")
+        assert_params([[:abc_def, "ghi"]], ["--abc-def", "ghi"])
       end
 
       it "with key as Symbol with underscore and tailing '='" do
-        assert_params([[:abc_def=, "ghi"]], "--abc-def=ghi")
+        assert_params([[:abc_def=, "ghi"]], ["--abc-def=ghi"])
       end
 
       it "with key as nil" do
-        assert_params([[nil, "def"]], "def")
+        assert_params([[nil, "def"]], ["def"])
       end
 
       it "with value as nil" do
-        assert_params([["--abc", nil]], "--abc")
+        assert_params([["--abc", nil]], ["--abc"])
       end
 
       it "with key and value nil" do
-        assert_params([[nil, nil]], "")
+        assert_params([[nil, nil]], [])
       end
 
       it "with key as nil and multiple values" do
-        assert_params([[nil, "def", "ghi"]], "def ghi")
+        assert_params([[nil, "def", "ghi"]], ["def", "ghi"])
       end
 
       it "with key of '--'" do
-        assert_params([["--", nil]], "--")
+        assert_params([["--", nil]], ["--"])
       end
 
       it "with key alone" do
-        assert_params([["--abc"]], "--abc")
+        assert_params([["--abc"]], ["--abc"])
       end
 
       it "with key as Symbol alone" do
-        assert_params([[:abc]], "--abc")
+        assert_params([[:abc]], ["--abc"])
       end
 
       it "with key as a bareword" do
-        assert_params(["--abc"], "--abc")
+        assert_params(["--abc"], ["--abc"])
       end
 
       it "with key as bareword Symbol" do
-        assert_params([:abc], "--abc")
+        assert_params([:abc], ["--abc"])
       end
 
       it "with value as a bareword" do
-        assert_params(["abc"], "abc")
+        assert_params(["abc"], ["abc"])
       end
 
       it "with entry as a nested Hash" do
-        assert_params([{:abc_def= => "ghi"}], "--abc-def=ghi")
+        assert_params([{:abc_def= => "ghi"}], ["--abc-def=ghi"])
       end
 
       it "with value as Symbol" do
-        assert_params([["--abc" => :def]], "--abc def")
+        assert_params([[{"--abc" => :def}]], ["--abc", "def"])
       end
 
       it "with value as Array" do
-        assert_params([["--abc", ["def", "ghi"]]], "--abc def ghi")
+        assert_params([["--abc", ["def", "ghi"]]], ["--abc", "def", "ghi"])
       end
 
       it "with value as Array and extra nils" do
-        assert_params([["--abc", [nil, "def", nil, "ghi", nil]]], "--abc def ghi")
+        assert_params([["--abc", [nil, "def", nil, "ghi", nil]]], ["--abc", "def", "ghi"])
       end
 
       it "with value as flattened Array" do
-        assert_params([["--abc", "def", "ghi"]], "--abc def ghi")
+        assert_params([["--abc", "def", "ghi"]], ["--abc", "def", "ghi"])
       end
 
       it "with value as Fixnum" do
-        assert_params([["--abc", 1]], "--abc 1")
+        assert_params([["--abc", 1]], ["--abc", "1"])
       end
 
       it "with value as Fixnum Array" do
-        assert_params([["--abc", [1, 2]]], "--abc 1 2")
+        assert_params([["--abc", [1, 2]]], ["--abc", "1", "2"])
       end
 
       it "with value as Range" do
-        assert_params([["--abc", (1..4)]], "--abc 1 2 3 4")
+        assert_params([["--abc", (1..4)]], ["--abc", "1", "2", "3", "4"])
       end
 
       it "with value as Pathname" do
-        assert_params([["--abc", Pathname.new("/usr/bin/ruby")]], "--abc /usr/bin/ruby")
+        assert_params([["--abc", Pathname.new("/usr/bin/ruby")]], ["--abc", "/usr/bin/ruby"])
       end
 
       it "with duplicate keys" do
-        assert_params([["--abc", 1], ["--abc", 2]], "--abc 1 --abc 2")
+        assert_params([["--abc", 1], ["--abc", 2]], ["--abc", "1", "--abc", "2"])
       end
     end
 
     context "with multiple params" do # real-world cases
-      let(:expected) { "log feature -E --oneline --grep abc" }
+      let(:expected) { ["log", "feature", "-E", "--oneline", "--grep", "abc"] }
 
       it "as full Hash" do
         params = {"log" => nil, "feature" => nil, "-E" => nil, :oneline => nil, "--grep" => "abc"}

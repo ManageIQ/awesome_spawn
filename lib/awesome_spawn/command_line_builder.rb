@@ -42,19 +42,24 @@ module AwesomeSpawn
     #   - `[[nil, "file1", "file2"]]`    generates `file1 file2`
     #   - `[["file1", "file2"]]`         generates `file1 file2`
     #
-    # @return [String] The full command line
+    # @return [Array] An array containing the command and an array of arguments
     def build(command, params = nil)
-      params = assemble_params(sanitize(params))
-      params.empty? ? command.to_s : "#{command} #{params}"
+      args = assemble_params_array(sanitize(params))
+      [command.to_s, args]
     end
 
     private
 
-    def assemble_params(sanitized_params)
-      sanitized_params.collect do |group|
-        joiner = group.first.to_s.end_with?("=") ? "" : " "
-        group.compact.join(joiner)
-      end.join(" ")
+    def assemble_params_array(sanitized_params)
+      sanitized_params.flat_map do |group|
+        if group.first.to_s.end_with?("=")
+          # For key=value format, join them as one argument
+          [group.compact.join]
+        else
+          # For key value format, flatten any nested arrays
+          group.compact.flatten
+        end
+      end
     end
 
     def sanitize(params)
@@ -68,7 +73,13 @@ module AwesomeSpawn
 
     def sanitize_item(item)
       case item
-      when Array then sanitize_key_values(item[0], item[1..-1])
+      when Array
+        # If array contains a single Hash, process the Hash directly
+        if item.length == 1 && item[0].kind_of?(Hash)
+          sanitize_associative_array(item[0])
+        else
+          sanitize_key_values(item[0], item[1..-1])
+        end
       when Hash  then sanitize_associative_array(item)
       else            sanitize_key_values(item, nil)
       end
@@ -106,7 +117,7 @@ module AwesomeSpawn
       when NilClass
         value
       else
-        value.to_s.shellescape
+        value.to_s
       end
     end
   end
